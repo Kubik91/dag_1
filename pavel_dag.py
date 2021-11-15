@@ -94,6 +94,8 @@ def load_data():
             sys.stderr.write(f"ERROR: {e}")
         else:
             keys.append(key.text.split(".")[0])
+            sys.stdout.write(f"---, {key}")
+    print('-------------', keys)
     _set_keys(keys)
 
 
