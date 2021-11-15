@@ -100,7 +100,7 @@ def _failure_callback(context):
 
 
 with DAG(
-    "pavel_dag", schedule_interval="0 * * * *", catchup=False,
+    "pavel_dag", schedule_interval="* * * * *", catchup=False,
     start_date=days_ago(2)
 ) as dag:
     # s3_check = PythonSensor(
@@ -181,7 +181,8 @@ with DAG(
                     hive_cli_conn_id="hive_staging",
                     schema="pavel_kandratsionak",
                     hiveconf_jinja_translate=True,
-                    task_id="drop_old_table",
+                    params={"table_name": f"{key}_tmp"},
+                    task_id=f"drop_old_table_{key}",
                     dag=dag,
                 )
 
