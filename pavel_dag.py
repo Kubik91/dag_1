@@ -4,7 +4,7 @@ import shutil
 import sys
 import xml.etree.ElementTree as ET
 from os import remove
-from urllib.request import urlopen, urlretrieve
+from urllib import urlopen, urlretrieve
 
 import pandas as pd
 import requests
@@ -34,22 +34,19 @@ def S3KeySensor():
 
 
 def test_data():
-    urlretrieve(
-        "http://deepyeti.ucsd.edu/jianmo/amazon/categoryFiles/All_Beauty.json.gz",
-        "All_Beauty.json.gz",
-    )
-    with gzip.open("All_Beauty.json.gz", "rb") as f_in, open(
-        "All_Beauty_1.json", "wb"
-    ) as f_out_1, open("All_Beauty_2.json", "wb") as f_out_2:
+    urlretrieve("http://deepyeti.ucsd.edu/jianmo/amazon/categoryFiles/All_Beauty.json.gz", "/user/shahidkubik/tmp/All_Beauty.json.gz")
+    with gzip.open("/user/shahidkubik/tmp/All_Beauty.json.gz", "rb") as f_in, open(
+        "/user/shahidkubik/tmp/All_Beauty_1.json", "wb"
+    ) as f_out_1, open("/user/shahidkubik/tmp/All_Beauty_2.json", "wb") as f_out_2:
         shutil.copyfileobj(f_in, f_out_1)
         shutil.copyfileobj(f_in, f_out_2)
     keys = ["All_Beauty_1", "All_Beauty_2"]
     for key in keys:
         with open(f"{key}.json", "r") as data:
             json2csv(data, key)
-    os.remove("All_Beauty.json.gz")
-    os.remove("All_Beauty_1.json")
-    os.remove("All_Beauty_2.json")
+    os.remove("/user/shahidkubik/tmp/All_Beauty.json.gz")
+    os.remove("/user/shahidkubik/tmp/All_Beauty_1.json")
+    os.remove("/user/shahidkubik/tmp/All_Beauty_2.json")
     _set_keys(keys)
 
 
@@ -65,7 +62,7 @@ def json2csv(data, key):
         "summary",
         "unixReviewTime",
     ]
-    with open(f"~/tmp/{key}_all.json", "w") as jsonfile:
+    with open(f"/user/shahidkubik/tmp/{key}_all.json", "w") as jsonfile:
         for i, line in enumerate(data):
             if not i:
                 print("[", file=jsonfile)
@@ -74,9 +71,9 @@ def json2csv(data, key):
             print(line, file=jsonfile)
         else:
             print("]", file=jsonfile)
-    df = pd.read_json(f"~/tmp/{key}_all.json", orient="records")
-    df[columns].to_csv(f"~/tmp/{key}.csv")
-    remove(f"~/tmp/{key}_all.json")
+    df = pd.read_json(f"/user/shahidkubik/tmp/{key}_all.json", orient="records")
+    df[columns].to_csv(f"/user/shahidkubik/tmp/{key}.csv")
+    remove(f"/user/shahidkubik/tmp/{key}_all.json")
 
 
 def load_data():
@@ -103,34 +100,34 @@ with DAG(
     "pavel_dag", schedule_interval="* * * * *", catchup=False,
     start_date=days_ago(2)
 ) as dag:
-    # s3_check = PythonSensor(
-    #     task_id="S3KeySensor",
-    #     poke_interval=120,
-    #     timeout=30,
-    #     mode="reschedule",
-    #     python_callable=S3KeySensor,
-    #     on_failure_callback=_failure_callback,
-    #     soft_fail=True,
-    # )
-    s3_test = PythonSensor(
-        task_id="test_data",
+    s3_check = PythonSensor(
+        task_id="S3KeySensor",
         poke_interval=120,
         timeout=30,
         mode="reschedule",
-        python_callable=test_data,
+        python_callable=S3KeySensor,
         on_failure_callback=_failure_callback,
         soft_fail=True,
     )
-
-    # load_data = PythonOperator(
-    #     task_id="load_data",
-    #     python_callable=load_data,
-    #     trigger_rule="none_failed_or_skipped",
+    # s3_test = PythonSensor(
+    #     task_id="test_data",
+    #     poke_interval=120,
+    #     timeout=30,
+    #     mode="reschedule",
+    #     python_callable=test_data,
+    #     on_failure_callback=_failure_callback,
+    #     soft_fail=True,
     # )
+
+    load_data = PythonOperator(
+        task_id="load_data",
+        python_callable=load_data,
+        trigger_rule="none_failed_or_skipped",
+    )
 
     copy_hdfs_task = BashOperator(
         task_id="copy_hdfs_task",
-        bash_command="hadoop fs -copyFromLocal ~/tmp/ /user/shahidkubik/staging",
+        bash_command="hadoop fs -copyFromLocal /user/shahidkubik/tmp/ /user/shahidkubik/staging",
     )
 
     keys_list = Variable.get("list_of_keys", default_var=[], deserialize_json=True)
