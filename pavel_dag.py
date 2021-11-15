@@ -147,7 +147,7 @@ with DAG(
     )
     copy_hdfs_task_5 = BashOperator(
         task_id="copy_hdfs_task_5",
-        bash_command="hdfs fs -ls && rm -r /tmp/pavel_kond",
+        bash_command="hdfs dfs -ls /user/shahidkubik/amazon_reviews/staging && rm -r /tmp/pavel_kond",
     )
     # copy_hdfs_task_6 = BashOperator(
     #     task_id="copy_hdfs_task_6",
