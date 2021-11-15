@@ -384,4 +384,4 @@ with DAG(
 
 # s3_test >> copy_hdfs_task >> dynamic_tasks_group_load >> dynamic_tasks_group_drop_duplicates
 s3_check >> load_data
-load_data >> copy_hdfs_task >> create_all_raitings_table >> create_user_scores_table >> create_reviews_table >> create_product_scores_table >> load_tasks
+load_data >> copy_hdfs_task >> create_all_raitings_table >> create_user_scores_table >> create_reviews_table >> create_product_scores_table >> load_tasks >> dynamic_tasks_group_drop_duplicates
