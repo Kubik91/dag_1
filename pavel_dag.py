@@ -127,7 +127,7 @@ with DAG(
 
     copy_hdfs_task = BashOperator(
         task_id="copy_hdfs_task",
-        bash_command="hadoop fs -copyFromLocal /user/shahidkubik/tmp/ /user/shahidkubik/staging",
+        bash_command="hadoop fs -f -copyFromLocal /user/shahidkubik/tmp/ /user/shahidkubik/staging",
     )
 
     keys_list = Variable.get("list_of_keys", default_var=[], deserialize_json=True)
