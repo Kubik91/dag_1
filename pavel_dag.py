@@ -218,13 +218,13 @@ with DAG(
         dag=dag,
     )
 
-    keys_list = Variable.get("list_of_keys", default_var=[], deserialize_json=True)
     print("List of keys updated")
 
     with TaskGroup(
         "dynamic_tasks_group_load",
         prefix_group_id=False,
     ) as dynamic_tasks_group_load:
+        keys_list = Variable.get("list_of_keys", default_var=[], deserialize_json=True)
         if keys_list:
             for index, key in enumerate(keys_list):
 
