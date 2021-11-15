@@ -131,154 +131,229 @@ with DAG(
 
     copy_hdfs_task = BashOperator(
         task_id="copy_hdfs_task",
-        bash_command="ls -la /tmp/pavel_kond",
+        bash_command="hdfs dfs -mkdir -p /user/shahidkubik/amazon_reviews/staging/ && hadoop fs -put -f /tmp/pavel_kond/tmp/ /user/shahidkubik/amazon_reviews/staging && rm -r /tmp/pavel_kond",
     )
-    copy_hdfs_task_2 = BashOperator(
-        task_id="copy_hdfs_task_2",
-        bash_command="hdfs dfs -mkdir -p /user/shahidkubik/amazon_reviews/staging/",
+
+    create_all_raitings_hql = """
+        CREATE TABLE IF NOT EXISTS all_raitings(
+            overall numeric(2,1), 
+            verified boolean, 
+            reviewtime date, 
+            reviewerid string, 
+            asin string, 
+            reviewername string, 
+            reviewtext string, 
+            summary string, 
+            unixreviewtime int)
+        PARTITIONED BY (part_year int)
+        STORED AS PARQUET
+        LOCATION '/user/shahidkubik/amazon_reviews/all_raitings';
+    """
+
+    create_user_scores_hql = """
+        CREATE TABLE IF NOT EXISTS user_scores(
+            reviewerid string, 
+            asin string,
+            overall numeric(2,1),
+            reviewtime date)
+        PARTITIONED BY (part_year int)
+        STORED AS PARQUET
+        LOCATION '/user/shahidkubik/amazon_reviews/user_scores';
+    """
+
+    create_reviews_hql = """
+        CREATE TABLE IF NOT EXISTS reviews(
+            reviewerid string, 
+            reviewtext string,
+            overall numeric(2,1),
+            reviewtime date)
+        PARTITIONED BY (part_year int)
+        STORED AS PARQUET
+        LOCATION '/user/shahidkubik/amazon_reviews/reviews';;
+    """
+
+    create_product_scores_hql = """
+        CREATE TABLE IF NOT EXISTS product_scores(
+            asin string, 
+            overall numeric(2,1), 
+            reviewtime date)
+        PARTITIONED BY (part_year int)
+        STORED AS PARQUET
+        LOCATION '/user/shahidkubik/amazon_reviews/product_scores';;
+    """
+
+    create_all_raitings_table = HiveOperator(
+        hql=create_all_raitings_hql,
+        hive_cli_conn_id="hive_staging",
+        schema="pavel_kandratsionak",
+        hiveconf_jinja_translate=True,
+        task_id="create_all_raitings",
+        dag=dag,
     )
-    # copy_hdfs_task_3 = BashOperator(
-    #     task_id="copy_hdfs_task_3",
-    #     bash_command="hdfs dfs -chmod 777 /user/shahidkubik/amazon_reviews/staging/",
-    # )
-    copy_hdfs_task_4 = BashOperator(
-        task_id="copy_hdfs_task_4",
-        bash_command="hadoop fs -copyFromLocal -f /tmp/pavel_kond/tmp /user/shahidkubik/amazon_reviews/staging",
+
+    create_user_scores_table = HiveOperator(
+        hql=create_user_scores_hql,
+        hive_cli_conn_id="hive_staging",
+        schema="pavel_kandratsionak",
+        hiveconf_jinja_translate=True,
+        task_id="create_user_scores",
+        dag=dag,
     )
-    copy_hdfs_task_5 = BashOperator(
-        task_id="copy_hdfs_task_5",
-        bash_command="hdfs dfs -ls /user/shahidkubik/amazon_reviews/staging && rm -r /tmp/pavel_kond",
+
+    create_reviews_table = HiveOperator(
+        hql=create_reviews_hql,
+        hive_cli_conn_id="hive_staging",
+        schema="pavel_kandratsionak",
+        hiveconf_jinja_translate=True,
+        task_id="create_reviews",
+        dag=dag,
     )
-    # copy_hdfs_task_6 = BashOperator(
-    #     task_id="copy_hdfs_task_6",
-    #     bash_command="ls -la /tmp/pavel_kond && hdfs dfs -mkdir -p /amazon_reviews/shahidkubik/staging/ && hdfs dfs -chmod 777 /amazon_reviews/shahidkubik/staging/ && hadoop fs -copyFromLocal /tmp/pavel_kond/tmp /amazon_reviews/shahidkubik/staging && hdfs fs -ls && rm -r /tmp/pavel_kond",
-    # )
+
+    create_product_scores_table = HiveOperator(
+        hql=create_product_scores_hql,
+        hive_cli_conn_id="hive_staging",
+        schema="pavel_kandratsionak",
+        hiveconf_jinja_translate=True,
+        task_id="create_product_scores",
+        dag=dag,
+    )
 
     keys_list = Variable.get("list_of_keys", default_var=[], deserialize_json=True)
     print("List of keys updated")
 
-    # with TaskGroup(
-    #     "dynamic_tasks_group_load",
-    #     prefix_group_id=False,
-    # ) as dynamic_tasks_group_load:
-    #     if keys_list:
-    #         for index, key in enumerate(keys_list):
-    #
-    #             create_temp_table_hql = """DROP TABLE IF EXISTS {{ params.table_name }};
-    #                     CREATE EXTERNAL TABLE data_tmp (
-    #                                             overall numeric(2,1),
-    #                                             verified boolean,
-    #                                             reviewtime string,
-    #                                             reviewerid string,
-    #                                             asin string,
-    #                                             reviewername string,
-    #                                             reviewtext string,
-    #                                             summary string,
-    #                                             unixreviewtime int)
-    #                     ROW FORMAT delimited fields terminated by ','
-    #                     STORED AS TEXTFILE
-    #                     LOCATION '/user/shahidkubik/staging/';"""
-    #
-    #             update_all_raitings_hql = """INSERT INTO TABLE all_raitings
-    #                     SELECT overall, verified, from_unixtime(unix_timestamp(reviewtime,'MM dd, yyyy'),'yyyy-MM-dd') as reviewtime,
-    #                     reviewerid, asin, reviewername, reviewtext, summary, unixreviewtime,
-    #                     from_unixtime(unix_timestamp(reviewtime,'MM dd, yyyy'),'yyyy') as part_year FROM {{ params.table_name }};"""
-    #
-    #             update_user_scores_hql = """INSERT INTO TABLE user_scores SELECT reviewerid, asin, overall, reviewtime,
-    #                     from_unixtime(unix_timestamp(reviewtime,'MM dd, yyyy'),'yyyy') as part_year FROM {{ params.table_name }};"""
-    #
-    #             update_reviews_hql = """INSERT INTO TABLE reviews SELECT reviewerid, reviewtext, overall, reviewtime,
-    #                     from_unixtime(unix_timestamp(reviewtime,'MM dd, yyyy'),'yyyy') as part_year FROM {{ params.table_name }};"""
-    #
-    #             update_product_scores_hql = """INSERT INTO TABLE product_scores SELECT asin, overall, reviewtime,
-    #                     from_unixtime(unix_timestamp(reviewtime,'MM dd, yyyy'),'yyyy') as part_year FROM {{ params.table_name }};"""
-    #
-    #             remove_temp_table_hql = (
-    #                 """DROP TABLE IF EXISTS {{ params.table_name }};"""
-    #             )
-    #
-    #             create_temp_table = HiveOperator(
-    #                 hql=create_temp_table_hql,
-    #                 hive_cli_conn_id="hive_staging",
-    #                 schema="pavel_kandratsionak",
-    #                 hiveconf_jinja_translate=True,
-    #                 params={"table_name": f"{key}_tmp"},
-    #                 task_id=f"drop_old_table_{key}",
-    #                 dag=dag,
-    #             )
-    #
-    #             parquet_all_raitings = HiveOperator(
-    #                 hql=update_all_raitings_hql,
-    #                 hive_cli_conn_id="hive_staging",
-    #                 schema="pavel_kandratsionak",
-    #                 hiveconf_jinja_translate=True,
-    #                 task_id=f"parquet_all_raitings_{key}",
-    #                 params={"table_name": f"{key}_tmp"},
-    #                 dag=dag,
-    #             )
-    #
-    #             parquet_scores = HiveOperator(
-    #                 hql=update_user_scores_hql,
-    #                 hive_cli_conn_id="hive_staging",
-    #                 schema="pavel_kandratsionak",
-    #                 hiveconf_jinja_translate=True,
-    #                 task_id=f"parquet_scores_{key}",
-    #                 params={"table_name": f"{key}_tmp"},
-    #                 dag=dag,
-    #             )
-    #
-    #             parquet_reviews = HiveOperator(
-    #                 hql=update_reviews_hql,
-    #                 hive_cli_conn_id="hive_staging",
-    #                 schema="pavel_kandratsionak",
-    #                 hiveconf_jinja_translate=True,
-    #                 task_id=f"parquet_reviews_{key}",
-    #                 params={"table_name": f"{key}_tmp"},
-    #                 dag=dag,
-    #             )
-    #
-    #             parquet_product_scores = HiveOperator(
-    #                 hql=update_product_scores_hql,
-    #                 hive_cli_conn_id="hive_staging",
-    #                 schema="pavel_kandratsionak",
-    #                 hiveconf_jinja_translate=True,
-    #                 task_id=f"parquet_product_scores_{key}",
-    #                 params={"table_name": f"{key}_tmp"},
-    #                 dag=dag,
-    #             )
-    #
-    #             remove_temp_table = HiveOperator(
-    #                 hql=remove_temp_table_hql,
-    #                 hive_cli_conn_id="hive_staging",
-    #                 schema="pavel_kandratsionak",
-    #                 hiveconf_jinja_translate=True,
-    #                 task_id=f"drop_old_table_{key}",
-    #                 params={"table_name": f"{key}_tmp"},
-    #                 dag=dag,
-    #             )
-    #
-    #             # TaskGroup level dependencies
-    #             create_temp_table >> parquet_all_raitings >> parquet_scores >> parquet_reviews >> parquet_product_scores >> remove_temp_table
-    #
-    # with TaskGroup(
-    #     "dynamic_tasks_group_drop_duplicates",
-    #     prefix_group_id=False,
-    # ) as dynamic_tasks_group_drop_duplicates:
-    #
-    #     drop_duplicates_hql = """INSERT OVERWRITE TABLE {{ params.table_name }} SELECT DISTINCT * FROM {{ params.table_name }};"""
-    #
-    #     for table in ["all_raitings", "user_scores", "reviews", "product_scores"]:
-    #         parquet_drop_duplicates = HiveOperator(
-    #             hql=drop_duplicates_hql,
-    #             hive_cli_conn_id="hive_staging",
-    #             schema="pavel_kandratsionak",
-    #             hiveconf_jinja_translate=True,
-    #             task_id=f"parquet_drop_duplicates_{table}",
-    #             params={"table_name": f"{table}"},
-    #             dag=dag,
-    #         )
-    #
-    #     parquet_drop_duplicates
+    with TaskGroup(
+        "dynamic_tasks_group_load",
+        prefix_group_id=False,
+    ) as dynamic_tasks_group_load:
+        if keys_list:
+            for index, key in enumerate(keys_list):
+
+                create_temp_table_hql = """DROP TABLE IF EXISTS {{ params.table_name }};
+                        CREATE EXTERNAL TABLE data_tmp (
+                                                overall numeric(2,1),
+                                                verified boolean,
+                                                reviewtime string,
+                                                reviewerid string,
+                                                asin string,
+                                                reviewername string,
+                                                reviewtext string,
+                                                summary string,
+                                                unixreviewtime int)
+                        ROW FORMAT delimited fields terminated by ','
+                        STORED AS TEXTFILE
+                        LOCATION '/user/shahidkubik/staging/';"""
+
+                update_all_raitings_hql = """INSERT INTO TABLE all_raitings
+                        SELECT overall, verified, from_unixtime(unix_timestamp(reviewtime,'MM dd, yyyy'),'yyyy-MM-dd') as reviewtime,
+                        reviewerid, asin, reviewername, reviewtext, summary, unixreviewtime,
+                        from_unixtime(unix_timestamp(reviewtime,'MM dd, yyyy'),'yyyy') as part_year FROM {{ params.table_name }};"""
+
+                update_user_scores_hql = """INSERT INTO TABLE user_scores SELECT reviewerid, asin, overall, reviewtime,
+                        from_unixtime(unix_timestamp(reviewtime,'MM dd, yyyy'),'yyyy') as part_year FROM {{ params.table_name }};"""
+
+                update_reviews_hql = """INSERT INTO TABLE reviews SELECT reviewerid, reviewtext, overall, reviewtime,
+                        from_unixtime(unix_timestamp(reviewtime,'MM dd, yyyy'),'yyyy') as part_year FROM {{ params.table_name }};"""
+
+                update_product_scores_hql = """INSERT INTO TABLE product_scores SELECT asin, overall, reviewtime,
+                        from_unixtime(unix_timestamp(reviewtime,'MM dd, yyyy'),'yyyy') as part_year FROM {{ params.table_name }};"""
+
+                remove_temp_table_hql = (
+                    """DROP TABLE IF EXISTS {{ params.table_name }};"""
+                )
+
+                create_temp_table = HiveOperator(
+                    hql=create_temp_table_hql,
+                    hive_cli_conn_id="hive_staging",
+                    schema="pavel_kandratsionak",
+                    hiveconf_jinja_translate=True,
+                    params={"table_name": f"{key}_tmp"},
+                    task_id=f"drop_old_table_{key}",
+                    dag=dag,
+                )
+
+                parquet_all_raitings = HiveOperator(
+                    hql=update_all_raitings_hql,
+                    hive_cli_conn_id="hive_staging",
+                    schema="pavel_kandratsionak",
+                    hiveconf_jinja_translate=True,
+                    task_id=f"parquet_all_raitings_{key}",
+                    params={"table_name": f"{key}_tmp"},
+                    dag=dag,
+                )
+
+                parquet_scores = HiveOperator(
+                    hql=update_user_scores_hql,
+                    hive_cli_conn_id="hive_staging",
+                    schema="pavel_kandratsionak",
+                    hiveconf_jinja_translate=True,
+                    task_id=f"parquet_scores_{key}",
+                    params={"table_name": f"{key}_tmp"},
+                    dag=dag,
+                )
+
+                parquet_reviews = HiveOperator(
+                    hql=update_reviews_hql,
+                    hive_cli_conn_id="hive_staging",
+                    schema="pavel_kandratsionak",
+                    hiveconf_jinja_translate=True,
+                    task_id=f"parquet_reviews_{key}",
+                    params={"table_name": f"{key}_tmp"},
+                    dag=dag,
+                )
+
+                parquet_product_scores = HiveOperator(
+                    hql=update_product_scores_hql,
+                    hive_cli_conn_id="hive_staging",
+                    schema="pavel_kandratsionak",
+                    hiveconf_jinja_translate=True,
+                    task_id=f"parquet_product_scores_{key}",
+                    params={"table_name": f"{key}_tmp"},
+                    dag=dag,
+                )
+
+                remove_temp_table = HiveOperator(
+                    hql=remove_temp_table_hql,
+                    hive_cli_conn_id="hive_staging",
+                    schema="pavel_kandratsionak",
+                    hiveconf_jinja_translate=True,
+                    task_id=f"drop_old_table_{key}",
+                    params={"table_name": f"{key}_tmp"},
+                    dag=dag,
+                )
+
+                # TaskGroup level dependencies
+                create_temp_table >> parquet_all_raitings >> parquet_scores >> parquet_reviews >> parquet_product_scores >> remove_temp_table
+
+    with TaskGroup(
+        "dynamic_tasks_group_drop_duplicates",
+        prefix_group_id=False,
+    ) as dynamic_tasks_group_drop_duplicates:
+
+        drop_duplicates_hql = """INSERT OVERWRITE TABLE {{ params.table_name }} SELECT DISTINCT * FROM {{ params.table_name }};"""
+
+        for table in ["all_raitings", "user_scores", "reviews", "product_scores"]:
+
+            create_all_raitings_hql = """
+                CREATE TABLE IF NOT EXISTS user_scores(
+                    reviewerid string, 
+                    asin string,
+                    overall numeric(2,1),
+                    reviewtime date)
+                PARTITIONED BY (part_year int)
+                STORED AS PARQUET
+                LOCATION '/user/shahidkubik/amazon_reviews/user_scores';
+                """
+            parquet_drop_duplicates = HiveOperator(
+                hql=drop_duplicates_hql,
+                hive_cli_conn_id="hive_staging",
+                schema="pavel_kandratsionak",
+                hiveconf_jinja_translate=True,
+                task_id=f"parquet_drop_duplicates_{table}",
+                params={"table_name": f"{table}"},
+                dag=dag,
+            )
+
+        parquet_drop_duplicates
 
 # s3_test >> copy_hdfs_task >> dynamic_tasks_group_load >> dynamic_tasks_group_drop_duplicates
-s3_check >> load_data >> copy_hdfs_task >> copy_hdfs_task_2 >> copy_hdfs_task_4 >> copy_hdfs_task_5
+s3_check >> load_data >> copy_hdfs_task >> create_all_raitings_table >> create_user_scores_table >> create_reviews_table >> create_product_scores_table
