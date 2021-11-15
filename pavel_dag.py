@@ -239,7 +239,7 @@ with DAG(
             keys_list = Variable.get(
                 "list_of_keys", default_var=[], deserialize_json=True
             )
-            logging.INFO(keys_list)
+            logging.info(keys_list)
             # with TaskGroup(
             #     "dynamic_tasks_group_load",
             #     prefix_group_id=False,
