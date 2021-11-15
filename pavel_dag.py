@@ -10,14 +10,17 @@ from urllib.request import urlopen, urlretrieve
 import pandas as pd
 import requests
 from airflow import DAG
+from airflow.example_dags.subdags.subdag import subdag
 from airflow.exceptions import AirflowSensorTimeout
 from airflow.models import Variable
 from airflow.operators.bash_operator import BashOperator
 from airflow.operators.hive_operator import HiveOperator
 from airflow.operators.python import PythonOperator
+from airflow.operators.subdag import SubDagOperator
 from airflow.sensors.python import PythonSensor
 from airflow.utils.dates import days_ago
 from airflow.utils.task_group import TaskGroup
+from airflow.operators.dummy import DummyOperator
 
 data_url = "https://storage.yandexcloud.net/misis-zo-bigdata"
 
@@ -95,7 +98,7 @@ def load_data():
         else:
             keys.append(key.text.split(".")[0])
             sys.stdout.write(f"---, {key}")
-    print('-------------', keys)
+    print("-------------", keys)
     _set_keys(keys)
 
 
@@ -220,20 +223,24 @@ with DAG(
         dag=dag,
     )
 
-
     def load_subdag(parent_dag_name, child_dag_name, args):
         dag_subdag = DAG(
-            dag_id='{0}.{1}'.format(parent_dag_name, child_dag_name),
+            dag_id="{0}.{1}".format(parent_dag_name, child_dag_name),
             default_args=args,
             schedule_interval="@once",
         )
         with dag_subdag:
 
+            start = DummyOperator(
+                task_id='start',
+            )
             with TaskGroup(
                 "dynamic_tasks_group_load",
                 prefix_group_id=False,
             ) as dynamic_tasks_group_load:
-                keys_list = Variable.get("list_of_keys", default_var=[], deserialize_json=True)
+                keys_list = Variable.get(
+                    "list_of_keys", default_var=[], deserialize_json=True
+                )
                 if keys_list:
                     for index, key in enumerate(keys_list):
 
@@ -332,6 +339,17 @@ with DAG(
 
                         # TaskGroup level dependencies
                         create_temp_table >> parquet_all_raitings >> parquet_scores >> parquet_reviews >> parquet_product_scores >> remove_temp_table
+        start >> dynamic_tasks_group_load
+
+    load_tasks = SubDagOperator(
+        task_id="load_tasks",
+        subdag=load_subdag(
+            parent_dag_name="example_subdag_operator",
+            child_dag_name="load_tasks",
+            args=[],
+        ),
+        dag=dag,
+    )
 
     with TaskGroup(
         "dynamic_tasks_group_drop_duplicates",
@@ -366,4 +384,4 @@ with DAG(
 
 # s3_test >> copy_hdfs_task >> dynamic_tasks_group_load >> dynamic_tasks_group_drop_duplicates
 s3_check >> load_data
-load_data >> copy_hdfs_task >> create_all_raitings_table >> create_user_scores_table >> create_reviews_table >> create_product_scores_table >> dynamic_tasks_group_load
+load_data >> copy_hdfs_task >> create_all_raitings_table >> create_user_scores_table >> create_reviews_table >> create_product_scores_table >> load_tasks
