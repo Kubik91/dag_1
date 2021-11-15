@@ -143,7 +143,7 @@ with DAG(
     # )
     copy_hdfs_task_4 = BashOperator(
         task_id="copy_hdfs_task_4",
-        bash_command="hadoop fs -copyFromLocal /tmp/pavel_kond/tmp /user/shahidkubik/amazon_reviews/staging",
+        bash_command="hadoop fs -copyFromLocal -f /tmp/pavel_kond/tmp /user/shahidkubik/amazon_reviews/staging",
     )
     copy_hdfs_task_5 = BashOperator(
         task_id="copy_hdfs_task_5",
