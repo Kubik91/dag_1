@@ -66,7 +66,7 @@ def json2csv(data, key):
         "summary",
         "unixReviewTime",
     ]
-    Path("~/pavel_kond/tmp").mkdir(parents=True, exist_ok=True)
+    Path("~/pavel_kond/tmp/").mkdir(parents=True, exist_ok=True)
     with open(f"~/pavel_kond/tmp/{key}_all.json", "w") as jsonfile:
         for i, line in enumerate(data):
             if not i:
@@ -131,7 +131,7 @@ with DAG(
 
     copy_hdfs_task = BashOperator(
         task_id="copy_hdfs_task",
-        bash_command="hadoop fs -copyFromLocal ~/pavel_kond/tmp /user/shahidkubik/staging && hdfs fs -ls && rm -r ~/pavel_kond",
+        bash_command="ls -la && hadoop fs -copyFromLocal ~/pavel_kond/tmp /user/shahidkubik/staging && hdfs fs -ls && rm -r ~/pavel_kond",
     )
 
     keys_list = Variable.get("list_of_keys", default_var=[], deserialize_json=True)
