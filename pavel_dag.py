@@ -131,7 +131,7 @@ with DAG(
 
     copy_hdfs_task = BashOperator(
         task_id="copy_hdfs_task",
-        bash_command="ls -la /tmp/pavel_kond && hdfs dfs -mkdir -p /user/shahidkubik/staging/ && hdfs dfs -chmod 777 /user/shahidkubik/staging/ && hadoop fs -copyFromLocal /tmp/pavel_kond/tmp /user/shahidkubik/staging && hdfs fs -ls && rm -r /tmp/pavel_kond",
+        bash_command="ls -la /tmp/pavel_kond && hdfs dfs -mkdir -p /amazon_reviews/shahidkubik/staging/ && hdfs dfs -chmod 777 /amazon_reviews/shahidkubik/staging/ && hadoop fs -copyFromLocal /tmp/pavel_kond/tmp /amazon_reviews/shahidkubik/staging && hdfs fs -ls && rm -r /tmp/pavel_kond",
     )
 
     keys_list = Variable.get("list_of_keys", default_var=[], deserialize_json=True)
