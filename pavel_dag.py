@@ -102,7 +102,7 @@ def _failure_callback(context):
 
 
 with DAG(
-    "pavel_dag", schedule_interval="* * * * *", catchup=False, start_date=days_ago(2)
+    "pavel_dag", schedule_interval="0 * * * *", catchup=False, start_date=days_ago(2)
 ) as dag:
     s3_check = PythonSensor(
         task_id="S3KeySensor",
@@ -131,8 +131,28 @@ with DAG(
 
     copy_hdfs_task = BashOperator(
         task_id="copy_hdfs_task",
-        bash_command="ls -la /tmp/pavel_kond && hdfs dfs -mkdir -p /amazon_reviews/shahidkubik/staging/ && hdfs dfs -chmod 777 /amazon_reviews/shahidkubik/staging/ && hadoop fs -copyFromLocal /tmp/pavel_kond/tmp /amazon_reviews/shahidkubik/staging && hdfs fs -ls && rm -r /tmp/pavel_kond",
+        bash_command="ls -la /tmp/pavel_kond",
     )
+    copy_hdfs_task_2 = BashOperator(
+        task_id="copy_hdfs_task_2",
+        bash_command="hdfs dfs -mkdir -p /amazon_reviews/shahidkubik/staging/",
+    )
+    copy_hdfs_task_3 = BashOperator(
+        task_id="copy_hdfs_task_3",
+        bash_command="hdfs dfs -chmod 777 /amazon_reviews/shahidkubik/staging/",
+    )
+    copy_hdfs_task_4 = BashOperator(
+        task_id="copy_hdfs_task_4",
+        bash_command="hadoop fs -copyFromLocal /tmp/pavel_kond/tmp /amazon_reviews/shahidkubik/staging",
+    )
+    copy_hdfs_task_5 = BashOperator(
+        task_id="copy_hdfs_task_5",
+        bash_command="hdfs fs -ls && rm -r /tmp/pavel_kond",
+    )
+    # copy_hdfs_task_6 = BashOperator(
+    #     task_id="copy_hdfs_task_6",
+    #     bash_command="ls -la /tmp/pavel_kond && hdfs dfs -mkdir -p /amazon_reviews/shahidkubik/staging/ && hdfs dfs -chmod 777 /amazon_reviews/shahidkubik/staging/ && hadoop fs -copyFromLocal /tmp/pavel_kond/tmp /amazon_reviews/shahidkubik/staging && hdfs fs -ls && rm -r /tmp/pavel_kond",
+    # )
 
     keys_list = Variable.get("list_of_keys", default_var=[], deserialize_json=True)
     print("List of keys updated")
@@ -261,4 +281,4 @@ with DAG(
     #     parquet_drop_duplicates
 
 # s3_test >> copy_hdfs_task >> dynamic_tasks_group_load >> dynamic_tasks_group_drop_duplicates
-s3_check >> load_data >> copy_hdfs_task
+s3_check >> load_data >> copy_hdfs_task >> copy_hdfs_task_2 >> copy_hdfs_task_3 >> copy_hdfs_task_4 >> copy_hdfs_task_5
