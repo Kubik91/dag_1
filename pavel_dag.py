@@ -35,7 +35,10 @@ def S3KeySensor():
 
 
 def test_data():
-    urlretrieve("http://deepyeti.ucsd.edu/jianmo/amazon/categoryFiles/All_Beauty.json.gz", "/user/shahidkubik/tmp/All_Beauty.json.gz")
+    urlretrieve(
+        "http://deepyeti.ucsd.edu/jianmo/amazon/categoryFiles/All_Beauty.json.gz",
+        "/user/shahidkubik/tmp/All_Beauty.json.gz",
+    )
     with gzip.open("/user/shahidkubik/tmp/All_Beauty.json.gz", "rb") as f_in, open(
         "/user/shahidkubik/tmp/All_Beauty_1.json", "wb"
     ) as f_out_1, open("/user/shahidkubik/tmp/All_Beauty_2.json", "wb") as f_out_2:
@@ -100,8 +103,7 @@ def _failure_callback(context):
 
 
 with DAG(
-    "pavel_dag", schedule_interval="* * * * *", catchup=False,
-    start_date=days_ago(2)
+    "pavel_dag", schedule_interval="* * * * *", catchup=False, start_date=days_ago(2)
 ) as dag:
     s3_check = PythonSensor(
         task_id="S3KeySensor",
