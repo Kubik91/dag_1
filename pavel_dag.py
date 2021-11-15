@@ -229,7 +229,7 @@ with DAG(
             for index, key in enumerate(keys_list):
 
                 create_temp_table_hql = """DROP TABLE IF EXISTS {{ params.table_name }};
-                        CREATE EXTERNAL TABLE data_tmp (
+                        CREATE EXTERNAL TABLE {{ params.table_name }} (
                                                 overall numeric(2,1),
                                                 verified boolean,
                                                 reviewtime string,
@@ -356,4 +356,4 @@ with DAG(
         parquet_drop_duplicates
 
 # s3_test >> copy_hdfs_task >> dynamic_tasks_group_load >> dynamic_tasks_group_drop_duplicates
-s3_check >> load_data >> copy_hdfs_task >> create_all_raitings_table >> create_user_scores_table >> create_reviews_table >> create_product_scores_table
+s3_check >> load_data >> copy_hdfs_task >> create_all_raitings_table >> create_user_scores_table >> create_reviews_table >> create_product_scores_table >> dynamic_tasks_group_load
