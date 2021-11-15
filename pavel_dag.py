@@ -4,7 +4,7 @@ import shutil
 import sys
 import xml.etree.ElementTree as ET
 from os import remove
-from urllib import urlopen, urlretrieve
+from urllib.request import urlopen, urlretrieve
 
 import pandas as pd
 import requests
