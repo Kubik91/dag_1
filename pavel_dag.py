@@ -79,7 +79,6 @@ def json2csv(data, key):
     df = pd.read_json(f"~/pavel_kond/tmp/{key}_all.json", orient="records")
     df[columns].to_csv(f"~/pavel_kond/tmp/{key}.csv")
     remove(f"~/pavel_kond/tmp/{key}_all.json")
-    shutil.rmtree("~/pavel_kond")
 
 
 def load_data():
@@ -132,7 +131,7 @@ with DAG(
 
     copy_hdfs_task = BashOperator(
         task_id="copy_hdfs_task",
-        bash_command="hadoop fs -copyFromLocal ~/pavel_kond/tmp /user/shahidkubik/staging && hdfs fs -ls",
+        bash_command="hadoop fs -copyFromLocal ~/pavel_kond/tmp /user/shahidkubik/staging && hdfs fs -ls && rm -r ~/pavel_kond",
     )
 
     keys_list = Variable.get("list_of_keys", default_var=[], deserialize_json=True)
