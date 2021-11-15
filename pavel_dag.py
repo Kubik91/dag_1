@@ -37,20 +37,20 @@ def S3KeySensor():
 def test_data():
     urlretrieve(
         "http://deepyeti.ucsd.edu/jianmo/amazon/categoryFiles/All_Beauty.json.gz",
-        "/user/shahidkubik/tmp/All_Beauty.json.gz",
+        "/tmp/pavel_kond/tmp/All_Beauty.json.gz",
     )
-    with gzip.open("/user/shahidkubik/tmp/All_Beauty.json.gz", "rb") as f_in, open(
-        "/user/shahidkubik/tmp/All_Beauty_1.json", "wb"
-    ) as f_out_1, open("/user/shahidkubik/tmp/All_Beauty_2.json", "wb") as f_out_2:
+    with gzip.open("/tmp/pavel_kond/tmp/All_Beauty.json.gz", "rb") as f_in, open(
+        "/tmp/pavel_kond/tmp/All_Beauty_1.json", "wb"
+    ) as f_out_1, open("/tmp/pavel_kond/tmp/All_Beauty_2.json", "wb") as f_out_2:
         shutil.copyfileobj(f_in, f_out_1)
         shutil.copyfileobj(f_in, f_out_2)
     keys = ["All_Beauty_1", "All_Beauty_2"]
     for key in keys:
         with open(f"{key}.json", "r") as data:
             json2csv(data, key)
-    os.remove("/user/shahidkubik/tmp/All_Beauty.json.gz")
-    os.remove("/user/shahidkubik/tmp/All_Beauty_1.json")
-    os.remove("/user/shahidkubik/tmp/All_Beauty_2.json")
+    os.remove("/tmp/pavel_kond/tmp/All_Beauty.json.gz")
+    os.remove("/tmp/pavel_kond/tmp/All_Beauty_1.json")
+    os.remove("/tmp/pavel_kond/tmp/All_Beauty_2.json")
     _set_keys(keys)
 
 
@@ -66,8 +66,8 @@ def json2csv(data, key):
         "summary",
         "unixReviewTime",
     ]
-    Path("~/pavel_kond/tmp/").mkdir(parents=True, exist_ok=True)
-    with open(f"~/pavel_kond/tmp/{key}_all.json", "w") as jsonfile:
+    Path("/tmp/pavel_kond/tmp/").mkdir(parents=True, exist_ok=True)
+    with open(f"/tmp/pavel_kond/tmp/{key}_all.json", "w") as jsonfile:
         for i, line in enumerate(data):
             if not i:
                 print("[", file=jsonfile)
@@ -76,9 +76,9 @@ def json2csv(data, key):
             print(line, file=jsonfile)
         else:
             print("]", file=jsonfile)
-    df = pd.read_json(f"~/pavel_kond/tmp/{key}_all.json", orient="records")
-    df[columns].to_csv(f"~/pavel_kond/tmp/{key}.csv")
-    remove(f"~/pavel_kond/tmp/{key}_all.json")
+    df = pd.read_json(f"/tmp/pavel_kond/tmp/{key}_all.json", orient="records")
+    df[columns].to_csv(f"/tmp/pavel_kond/tmp/{key}.csv")
+    remove(f"/tmp/pavel_kond/tmp/{key}_all.json")
 
 
 def load_data():
@@ -131,7 +131,7 @@ with DAG(
 
     copy_hdfs_task = BashOperator(
         task_id="copy_hdfs_task",
-        bash_command="ls -la && hadoop fs -copyFromLocal ~/pavel_kond/tmp /user/shahidkubik/staging && hdfs fs -ls && rm -r ~/pavel_kond",
+        bash_command="ls -la /tmp/pavel_kond && hadoop fs -copyFromLocal /tmp/pavel_kond/tmp /user/shahidkubik/staging && hdfs fs -ls && rm -r /tmp/pavel_kond",
     )
 
     keys_list = Variable.get("list_of_keys", default_var=[], deserialize_json=True)
