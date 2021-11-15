@@ -3,7 +3,6 @@ import os
 import shutil
 import sys
 import xml.etree.ElementTree as ET
-from datetime import datetime
 from os import remove
 from urllib.request import urlopen, urlretrieve
 
@@ -16,9 +15,8 @@ from airflow.operators.bash_operator import BashOperator
 from airflow.operators.hive_operator import HiveOperator
 from airflow.operators.python import PythonOperator
 from airflow.sensors.python import PythonSensor
+from airflow.utils.dates import days_ago
 from airflow.utils.task_group import TaskGroup
-
-default_args = {"start_date": datetime(2021, 11, 11)}
 
 data_url = "https://storage.yandexcloud.net/misis-zo-bigdata"
 
@@ -102,7 +100,8 @@ def _failure_callback(context):
 
 
 with DAG(
-    "pavel_dag", schedule_interval="0 * * * *", default_args=default_args, catchup=False
+    "pavel_dag", schedule_interval="0 * * * *", catchup=False,
+    start_date=days_ago(2)
 ) as dag:
     s3_check = PythonSensor(
         task_id="S3KeySensor",
