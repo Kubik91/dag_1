@@ -135,15 +135,15 @@ with DAG(
     )
     copy_hdfs_task_2 = BashOperator(
         task_id="copy_hdfs_task_2",
-        bash_command="hdfs dfs -mkdir -p /shahidkubik/amazon_reviews/staging/",
+        bash_command="hdfs dfs -mkdir -p ~/amazon_reviews/staging/",
     )
     copy_hdfs_task_3 = BashOperator(
         task_id="copy_hdfs_task_3",
-        bash_command="hdfs dfs -chmod 777 /shahidkubik/amazon_reviews/staging/",
+        bash_command="hdfs dfs -chmod 777 ~/amazon_reviews/staging/",
     )
     copy_hdfs_task_4 = BashOperator(
         task_id="copy_hdfs_task_4",
-        bash_command="hadoop fs -copyFromLocal /tmp/pavel_kond/tmp /shahidkubik/amazon_reviews/staging",
+        bash_command="hadoop fs -copyFromLocal /tmp/pavel_kond/tmp ~/amazon_reviews/staging",
     )
     copy_hdfs_task_5 = BashOperator(
         task_id="copy_hdfs_task_5",
