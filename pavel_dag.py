@@ -4,6 +4,7 @@ import shutil
 import sys
 import xml.etree.ElementTree as ET
 from os import remove
+from pathlib import Path
 from urllib.request import urlopen, urlretrieve
 
 import pandas as pd
@@ -62,7 +63,8 @@ def json2csv(data, key):
         "summary",
         "unixReviewTime",
     ]
-    with open(f"/user/shahidkubik/tmp/{key}_all.json", "w") as jsonfile:
+    Path("~/pavel_kond/tmp").mkdir(parents=True, exist_ok=True)
+    with open(f"~/pavel_kond/tmp/{key}_all.json", "w") as jsonfile:
         for i, line in enumerate(data):
             if not i:
                 print("[", file=jsonfile)
@@ -71,9 +73,10 @@ def json2csv(data, key):
             print(line, file=jsonfile)
         else:
             print("]", file=jsonfile)
-    df = pd.read_json(f"/user/shahidkubik/tmp/{key}_all.json", orient="records")
-    df[columns].to_csv(f"/user/shahidkubik/tmp/{key}.csv")
-    remove(f"/user/shahidkubik/tmp/{key}_all.json")
+    df = pd.read_json(f"~/pavel_kond/tmp/{key}_all.json", orient="records")
+    df[columns].to_csv(f"~/pavel_kond/tmp/{key}.csv")
+    remove(f"~/pavel_kond/tmp/{key}_all.json")
+    shutil.rmtree("~/pavel_kond")
 
 
 def load_data():
@@ -127,7 +130,7 @@ with DAG(
 
     copy_hdfs_task = BashOperator(
         task_id="copy_hdfs_task",
-        bash_command="hadoop fs -f -copyFromLocal /user/shahidkubik/tmp/ /user/shahidkubik/staging",
+        bash_command="hadoop fs -f -copyFromLocal ~/pavel_kond/tmp /user/shahidkubik/staging",
     )
 
     keys_list = Variable.get("list_of_keys", default_var=[], deserialize_json=True)
