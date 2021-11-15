@@ -137,10 +137,10 @@ with DAG(
         task_id="copy_hdfs_task_2",
         bash_command="hdfs dfs -mkdir -p /user/shahidkubik/amazon_reviews/staging/",
     )
-    copy_hdfs_task_3 = BashOperator(
-        task_id="copy_hdfs_task_3",
-        bash_command="hdfs dfs -chmod 777 /user/shahidkubik/amazon_reviews/staging/",
-    )
+    # copy_hdfs_task_3 = BashOperator(
+    #     task_id="copy_hdfs_task_3",
+    #     bash_command="hdfs dfs -chmod 777 /user/shahidkubik/amazon_reviews/staging/",
+    # )
     copy_hdfs_task_4 = BashOperator(
         task_id="copy_hdfs_task_4",
         bash_command="hadoop fs -copyFromLocal /tmp/pavel_kond/tmp /user/shahidkubik/amazon_reviews/staging",
@@ -281,4 +281,4 @@ with DAG(
     #     parquet_drop_duplicates
 
 # s3_test >> copy_hdfs_task >> dynamic_tasks_group_load >> dynamic_tasks_group_drop_duplicates
-s3_check >> load_data >> copy_hdfs_task >> copy_hdfs_task_2 >> copy_hdfs_task_3 >> copy_hdfs_task_4 >> copy_hdfs_task_5
+s3_check >> load_data >> copy_hdfs_task >> copy_hdfs_task_2 >> copy_hdfs_task_4 >> copy_hdfs_task_5
