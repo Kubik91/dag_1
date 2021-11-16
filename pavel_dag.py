@@ -234,12 +234,8 @@ with DAG(
         )
 
         with dag_subdag:
-            start = DummyOperator(
-                task_id='start',
-                dag=dag_subdag
-            )
-            logging.info('==========', keys)
 
+            test_list = []
             try:
                 if len(parent_dag.get_active_runs()) > 0:
                     test_list = parent_dag.get_task_instances(settings.Session, start_date=parent_dag.get_active_runs()[-1])[-1].xcom_pull(
@@ -249,6 +245,22 @@ with DAG(
                     logging.info('==========', test_list)
             except Exception as e:
                 logging.warning(f"ERROR: {e}")
+
+            def echo_values():
+                logging.info(f'keys: {keys}')
+                logging.info(f'keys_list: {Variable.get("list_of_keys", default_var=[], deserialize_json=True)}')
+                logging.info(f"test_list: {test_list}")
+
+            start = DummyOperator(
+                task_id='start'
+            )
+            logging.info('==========', keys)
+
+            echo = PythonOperator(
+                task_id="echo",
+                python_callable=load_data,
+                trigger_rule="none_failed_or_skipped",
+            )
         # keys_list = Variable.get(
         #     "list_of_keys", default_var=[], deserialize_json=True
         # )
@@ -360,7 +372,7 @@ with DAG(
                 #     # TaskGroup level dependencies
                 #     create_temp_table >> parquet_all_raitings >> parquet_scores >> parquet_reviews >> parquet_product_scores >> remove_temp_table
         # start >> dynamic_tasks_group_load
-        start
+        start >> echo
         return dag_subdag
 
     load_tasks = SubDagOperator(
