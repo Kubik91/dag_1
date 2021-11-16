@@ -85,6 +85,11 @@ def json2csv(data, key):
     df[columns].to_csv(f"/tmp/pavel_kond/tmp/{key}.csv")
     remove(f"/tmp/pavel_kond/tmp/{key}_all.json")
 
+def echo_values():
+    # logging.info(f'keys: {keys}')
+    logging.info(f'keys_list: {Variable.get("list_of_keys", default_var=[], deserialize_json=True)}')
+    # logging.info(f"test_list: {test_list}")
+
 
 def load_data():
     response = requests.get(f"{data_url}?list-type=2&encoding-type=url")
@@ -116,35 +121,30 @@ def load_subdag(parent_dag, child_dag_name, args, keys):
         schedule_interval=None,
         start_date=days_ago(2)
     )
-    with subdag:
-        test_list = []
-        try:
-            if len(parent_dag.get_active_runs()) > 0:
-                test_list = parent_dag.get_task_instances(settings.Session, start_date=parent_dag.get_active_runs()[-1])[-1].xcom_pull(
-                    dag_id=parent_dag.dag_id,
-                    task_ids='load_data')
+    # test_list = []
+    # try:
+    #     if len(parent_dag.get_active_runs()) > 0:
+    #         test_list = parent_dag.get_task_instances(settings.Session, start_date=parent_dag.get_active_runs()[-1])[-1].xcom_pull(
+    #             dag_id=parent_dag.dag_id,
+    #             task_ids='load_data')
+    #
+    #         logging.info('==========', test_list)
+    # except Exception as e:
+    #     logging.warning(f"ERROR: {e}")
 
-                logging.info('==========', test_list)
-        except Exception as e:
-            logging.warning(f"ERROR: {e}")
+    start = DummyOperator(
+        task_id='start',
+        dag=subdag
+    )
+    # logging.info('==========', keys)
 
-        def echo_values():
-            logging.info(f'keys: {keys}')
-            logging.info(f'keys_list: {Variable.get("list_of_keys", default_var=[], deserialize_json=True)}')
-            logging.info(f"test_list: {test_list}")
-
-        start = DummyOperator(
-            task_id='start',
-            dag=subdag
-        )
-        logging.info('==========', keys)
-
-        echo = PythonOperator(
-            task_id="echo",
-            python_callable=echo_values,
-            trigger_rule="none_failed_or_skipped",
-            dag=subdag
-        )
+    echo = PythonOperator(
+        task_id="echo",
+        python_callable=echo_values,
+        trigger_rule="none_failed_or_skipped",
+        params={"keys": keys},
+        dag=subdag,
+    )
     # keys_list = Variable.get(
     #     "list_of_keys", default_var=[], deserialize_json=True
     # )
@@ -257,7 +257,7 @@ def load_subdag(parent_dag, child_dag_name, args, keys):
             #     create_temp_table >> parquet_all_raitings >> parquet_scores >> parquet_reviews >> parquet_product_scores >> remove_temp_table
         # start >> dynamic_tasks_group_load
         # start >> echo
-        start.set_downstream(echo)
+    start.set_downstream(echo)
     return subdag
 
 
