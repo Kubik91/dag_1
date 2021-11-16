@@ -231,7 +231,7 @@ with DAG(
             dag_id="{0}.{1}".format(parent_dag_name, child_dag_name),
             default_args=args,
             schedule_interval="@once",
-            start_date=days_ago(2)
+            start_date=parent_dag.start_date
         )
         with dag_subdag:
 
@@ -363,7 +363,7 @@ with DAG(
         task_id="load_tasks",
         subdag=load_subdag(
             parent_dag_name="pavel_dag",
-            child_dag_name="load_tasks_dag",
+            child_dag_name="load_tasks",
             args=[],
             keys="'{{ ti.xcom_pull(task_ids='load_config', dag_id='pavel_dag' }}'",
             parent_dag=dag
