@@ -237,6 +237,7 @@ with DAG(
 
             start = DummyOperator(
                 task_id='start',
+                dag=dag_subdag
             )
             logging.info('==========', keys)
 
