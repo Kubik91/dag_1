@@ -258,7 +258,7 @@ with DAG(
 
             echo = PythonOperator(
                 task_id="echo",
-                python_callable=load_data,
+                python_callable=echo_values,
                 trigger_rule="none_failed_or_skipped",
             )
         # keys_list = Variable.get(
