@@ -10,7 +10,7 @@ from urllib.request import urlopen, urlretrieve
 
 import pandas as pd
 import requests
-from airflow import DAG
+from airflow import DAG, settings
 from airflow.models import Variable
 from airflow.operators.bash_operator import BashOperator
 from airflow.operators.hive_operator import HiveOperator
@@ -240,7 +240,7 @@ with DAG(
         logging.info('==========', keys)
 
         # if len(parent_dag.get_active_runs()) > 0:
-        test_list = parent_dag.xcom_pull(
+        test_list = parent_dag.get_task_instances(settings.Session, start_date=parent_dag.get_active_runs()[-1])[-1].xcom_pull(
             dag_id=parent_dag_name,
             task_ids='load_data')
 
