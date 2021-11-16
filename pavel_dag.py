@@ -104,7 +104,7 @@ def load_data():
             json2csv(data, key.text.split(".")[0])
             print('+++++++++++++')
         except Exception as e:
-            sys.stderr.write(f"ERROR: {e}")
+            print(f"ERROR: {e}")
         else:
             keys.append(key.text.split(".")[0])
             sys.stdout.write(f"---, {key}")
