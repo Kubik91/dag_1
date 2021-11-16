@@ -100,7 +100,7 @@ def load_data():
     for key in xml.find(f"{xmlns}Contents").findall(f"{xmlns}Key"):
         try:
             data = urlopen(f"{data_url}/{key.text}")
-            print('=========', key)
+            print('=========', key, key.text.split("."))
             json2csv(data, key.text.split(".")[0])
             print('+++++++++++++')
         except Exception as e:
