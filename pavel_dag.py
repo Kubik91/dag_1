@@ -239,12 +239,12 @@ with DAG(
         )
         logging.info('==========', keys)
 
-        if len(parent_dag.get_active_runs()) > 0:
-            test_list = parent_dag.xcom_pull(
-                dag_id=parent_dag_name,
-                task_ids='load_data')
-            if test_list:
-                logging.info('==========', test_list)
+        # if len(parent_dag.get_active_runs()) > 0:
+        #     test_list = parent_dag.xcom_pull(
+        #         dag_id=parent_dag_name,
+        #         task_ids='load_data')
+        #     if test_list:
+        #         logging.info('==========', test_list)
         keys_list = Variable.get(
             "list_of_keys", default_var=[], deserialize_json=True
         )
