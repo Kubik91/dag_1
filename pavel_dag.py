@@ -268,7 +268,7 @@ def _failure_callback(context):
 
 
 with DAG(
-    "pavel1_dag", schedule_interval="0 * * * *", catchup=False, start_date=days_ago(2)
+    "pavel_dag", schedule_interval="0 * * * *", catchup=False, start_date=days_ago(2)
 ) as dag:
     s3_check_sensor = PythonSensor(
         task_id="S3KeySensor",
