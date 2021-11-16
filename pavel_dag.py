@@ -351,8 +351,7 @@ with DAG(
             hive_cli_conn_id="hive_staging",
             schema="pavel_kandratsionak",
             hiveconf_jinja_translate=True,
-            task_id="create_all_raitings",
-            dag=dag,
+            task_id="create_all_raitings"
         )
 
         create_user_scores_table = HiveOperator(
@@ -360,8 +359,7 @@ with DAG(
             hive_cli_conn_id="hive_staging",
             schema="pavel_kandratsionak",
             hiveconf_jinja_translate=True,
-            task_id="create_user_scores",
-            dag=dag,
+            task_id="create_user_scores"
         )
 
         create_reviews_table = HiveOperator(
@@ -369,8 +367,7 @@ with DAG(
             hive_cli_conn_id="hive_staging",
             schema="pavel_kandratsionak",
             hiveconf_jinja_translate=True,
-            task_id="create_reviews",
-            dag=dag,
+            task_id="create_reviews"
         )
 
         create_product_scores_table = HiveOperator(
@@ -378,8 +375,7 @@ with DAG(
             hive_cli_conn_id="hive_staging",
             schema="pavel_kandratsionak",
             hiveconf_jinja_translate=True,
-            task_id="create_product_scores",
-            dag=dag,
+            task_id="create_product_scores"
         )
 
     load_tasks = SubDagOperator(
@@ -389,8 +385,7 @@ with DAG(
             child_dag_name="load_tasks",
             args=[],
             # keys="'{{ ti.xcom_pull(task_ids='load_config', dag_id='pavel_dag' }}'",
-        ),
-        dag=dag,
+        )
     )
 
     with TaskGroup(
@@ -418,8 +413,7 @@ with DAG(
                 schema="pavel_kandratsionak",
                 hiveconf_jinja_translate=True,
                 task_id=f"parquet_drop_duplicates_{table}",
-                params={"table_name": f"{table}"},
-                dag=dag,
+                params={"table_name": f"{table}"}
             )
 
         parquet_drop_duplicates
