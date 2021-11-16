@@ -359,17 +359,17 @@ with DAG(
 
         return dag_subdag
 
-    load_tasks = SubDagOperator(
-        task_id="load_tasks",
-        subdag=load_subdag(
-            parent_dag_name="pavel_dag",
-            child_dag_name="load_tasks",
-            args=[],
-            keys="'{{ ti.xcom_pull(task_ids='load_config', dag_id='pavel_dag' }}'",
-            parent_dag=dag
-        ),
-        dag=dag,
-    )
+    # load_tasks = SubDagOperator(
+    #     task_id="load_tasks",
+    #     subdag=load_subdag(
+    #         parent_dag_name="pavel_dag",
+    #         child_dag_name="load_tasks",
+    #         args=[],
+    #         keys="'{{ ti.xcom_pull(task_ids='load_config', dag_id='pavel_dag' }}'",
+    #         parent_dag=dag
+    #     ),
+    #     dag=dag,
+    # )
 
     with TaskGroup(
         "dynamic_tasks_group_drop_duplicates",
