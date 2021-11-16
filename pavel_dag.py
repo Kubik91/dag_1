@@ -98,16 +98,16 @@ def load_data():
     xmlns = xml.tag.replace("ListBucketResult", "")
     keys = []
     for key in xml.find(f"{xmlns}Contents").findall(f"{xmlns}Key"):
-        try:
-            data = urlopen(f"{data_url}/{key.text}")
-            print('=========', key, key.text.split("."))
-            json2csv(data, key.text.split(".")[0])
-            print('+++++++++++++')
-        except Exception as e:
-            print(f"ERROR: {e}")
-        else:
-            keys.append(key.text.split(".")[0])
-            sys.stdout.write(f"---, {key}")
+        # try:
+        data = urlopen(f"{data_url}/{key.text}")
+        print('=========', key, key.text.split("."))
+        json2csv(data, key.text.split(".")[0])
+        print('+++++++++++++')
+        # except Exception as e:
+        #     print(f"ERROR: {e}")
+        # else:
+        keys.append(key.text.split(".")[0])
+        #     sys.stdout.write(f"---, {key}")
     print("-------------", keys)
     _set_keys(keys)
     return keys
