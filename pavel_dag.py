@@ -11,7 +11,7 @@ from urllib.request import urlopen, urlretrieve
 
 import pandas as pd
 import requests
-from airflow import DAG, settings
+from airflow import DAG
 from airflow.models import Variable
 from airflow.operators.bash_operator import BashOperator
 from airflow.operators.hive_operator import HiveOperator
@@ -114,10 +114,10 @@ def _failure_callback(context):
     sys.stderr.write(f"ERROR: {context['exception']}")
 
 
-def load_subdag(parent_dag, child_dag_name, args, keys):
+def load_subdag(parent_dag, child_dag_name, args):
     subdag = DAG(
         dag_id='%s.%s' % (parent_dag.dag_id, child_dag_name),
-        default_args=args,
+        default_args=parent_dag.default_args,
         schedule_interval=None,
         start_date=days_ago(2)
     )
@@ -142,7 +142,6 @@ def load_subdag(parent_dag, child_dag_name, args, keys):
         task_id="echo",
         python_callable=echo_values,
         trigger_rule="none_failed_or_skipped",
-        params={"keys": keys},
         dag=subdag,
     )
     # keys_list = Variable.get(
@@ -389,9 +388,8 @@ with DAG(
             parent_dag=dag,
             child_dag_name="load_tasks",
             args=[],
-            keys="'{{ ti.xcom_pull(task_ids='load_config', dag_id='pavel_dag' }}'",
+            # keys="'{{ ti.xcom_pull(task_ids='load_config', dag_id='pavel_dag' }}'",
         ),
-        session=settings.Session,
         dag=dag,
     )
 
