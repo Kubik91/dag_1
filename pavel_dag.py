@@ -229,7 +229,7 @@ with DAG(
         dag_subdag = DAG(
             dag_id="{0}.{1}".format(parent_dag_name, child_dag_name),
             default_args=args,
-            schedule_interval="@once",
+            schedule_interval=parent_dag.schedule_interval,
             start_date=parent_dag.start_date
         )
 
@@ -240,14 +240,14 @@ with DAG(
         logging.info('==========', keys)
 
         # if len(parent_dag.get_active_runs()) > 0:
-        #     test_list = parent_dag.xcom_pull(
-        #         dag_id=parent_dag_name,
-        #         task_ids='load_data')
-        #     if test_list:
-        #         logging.info('==========', test_list)
-        keys_list = Variable.get(
-            "list_of_keys", default_var=[], deserialize_json=True
-        )
+        test_list = parent_dag.xcom_pull(
+            dag_id=parent_dag_name,
+            task_ids='load_data')
+        if test_list:
+            logging.info('==========', test_list)
+        # keys_list = Variable.get(
+        #     "list_of_keys", default_var=[], deserialize_json=True
+        # )
         logging.info('--------', keys_list)
         # with TaskGroup(
         #     "dynamic_tasks_group_load",
