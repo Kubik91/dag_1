@@ -360,7 +360,7 @@ with DAG(
                 #     # TaskGroup level dependencies
                 #     create_temp_table >> parquet_all_raitings >> parquet_scores >> parquet_reviews >> parquet_product_scores >> remove_temp_table
         # start >> dynamic_tasks_group_load
-
+        start
         return dag_subdag
 
     load_tasks = SubDagOperator(
