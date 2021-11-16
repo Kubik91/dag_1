@@ -226,7 +226,7 @@ with DAG(
         dag=dag,
     )
 
-    def load_subdag(parent_dag_name, child_dag_name, args, parent_dag):
+    def load_subdag(parent_dag_name, child_dag_name, args, keys, parent_dag):
         dag_subdag = DAG(
             dag_id="{0}.{1}".format(parent_dag_name, child_dag_name),
             default_args=args,
@@ -238,6 +238,7 @@ with DAG(
             start = DummyOperator(
                 task_id='start',
             )
+            logging.info('==========', keys)
 
             if len(parent_dag.get_active_runs()) > 0:
                 test_list = parent_dag.xcom_pull(
@@ -364,6 +365,7 @@ with DAG(
             parent_dag_name="pavel_dag",
             child_dag_name="load_tasks_dag",
             args=[],
+            keys="'{{ ti.xcom_pull(task_ids='load_config', dag_id='pavel_dag' }}'",
             parent_dag=dag
         ),
         dag=dag,
