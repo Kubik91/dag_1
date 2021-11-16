@@ -11,8 +11,6 @@ from urllib.request import urlopen, urlretrieve
 import pandas as pd
 import requests
 from airflow import DAG
-from airflow.example_dags.subdags.subdag import subdag
-from airflow.exceptions import AirflowSensorTimeout
 from airflow.models import Variable
 from airflow.operators.bash_operator import BashOperator
 from airflow.operators.hive_operator import HiveOperator
@@ -32,6 +30,7 @@ def _set_keys(keys):
 
 
 def S3KeySensor():
+    logging.info(f"Start loading: {data_url}?list-type=2&encoding-type=url")
     response = requests.get(f"{data_url}?list-type=2&encoding-type=url")
     xml = ET.fromstring(response.text)
     xmlns = xml.tag.replace("ListBucketResult", "")
