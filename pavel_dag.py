@@ -113,7 +113,7 @@ def load_data():
 
 def create_temp_tables(**kwargs):
     ti = kwargs['ti']
-    logging.info(ti.xcom_pull(task_ids='bash_executor'))
+    logging.info(ti.xcom_pull(task_ids='load_data'))
 
 
 def _failure_callback(context):
