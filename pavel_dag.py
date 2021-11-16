@@ -359,17 +359,17 @@ with DAG(
 
         return dag_subdag
 
-    # load_tasks = SubDagOperator(
-    #     task_id="load_tasks",
-    #     subdag=load_subdag(
-    #         parent_dag_name="pavel_dag",
-    #         child_dag_name="load_tasks",
-    #         args=[],
-    #         keys="'{{ ti.xcom_pull(task_ids='load_config', dag_id='pavel_dag' }}'",
-    #         parent_dag=dag
-    #     ),
-    #     dag=dag,
-    # )
+    load_tasks = SubDagOperator(
+        task_id="load_tasks",
+        subdag=load_subdag(
+            parent_dag_name="pavel_dag",
+            child_dag_name="load_tasks",
+            args=[],
+            keys="'{{ ti.xcom_pull(task_ids='load_config', dag_id='pavel_dag' }}'",
+            parent_dag=dag
+        ),
+        dag=dag,
+    )
 
     with TaskGroup(
         "dynamic_tasks_group_drop_duplicates",
@@ -402,5 +402,4 @@ with DAG(
 
         parquet_drop_duplicates
 
-s3_check >> load_data
-load_data >> copy_hdfs_task >> create_all_raitings_table >> create_user_scores_table >> create_reviews_table >> create_product_scores_table >> dynamic_tasks_group_drop_duplicates
+s3_check >> load_data >> copy_hdfs_task >> create_all_raitings_table >> create_user_scores_table >> create_reviews_table >> create_product_scores_table >> load_tasks >> dynamic_tasks_group_drop_duplicates
