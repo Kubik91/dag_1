@@ -109,19 +109,19 @@ def _failure_callback(context):
     sys.stderr.write(f"ERROR: {context['exception']}")
 
 
-def load_subdag(parent_dag_name, child_dag_name, args, keys, parent_dag):
+def load_subdag(parent_dag, child_dag_name, args, keys):
     subdag = DAG(
-        dag_id="{0}.{1}".format(parent_dag_name, child_dag_name),
+        dag_id='%s.%s' % (parent_dag.dag_id, child_dag_name),
         default_args=args,
         schedule_interval=None,
-        start_date=datetime.now()
+        start_date=days_ago(2)
     )
     with subdag:
         test_list = []
         try:
             if len(parent_dag.get_active_runs()) > 0:
                 test_list = parent_dag.get_task_instances(settings.Session, start_date=parent_dag.get_active_runs()[-1])[-1].xcom_pull(
-                    dag_id=parent_dag_name,
+                    dag_id=parent_dag.dag_id,
                     task_ids='load_data')
 
                 logging.info('==========', test_list)
@@ -386,11 +386,10 @@ with DAG(
     load_tasks = SubDagOperator(
         task_id="load_tasks",
         subdag=load_subdag(
-            parent_dag_name="pavel_dag",
+            parent_dag=dag,
             child_dag_name="load_tasks",
             args=[],
             keys="'{{ ti.xcom_pull(task_ids='load_config', dag_id='pavel_dag' }}'",
-            parent_dag=dag
         ),
         session=settings.Session,
         dag=dag,
