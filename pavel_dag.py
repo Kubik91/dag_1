@@ -396,7 +396,7 @@ with DAG(
     # )
 
     create_temp_tables = PythonOperator(
-        task_id="load_data",
+        task_id="create_temp_tables",
         python_callable=create_temp_tables,
         trigger_rule="none_failed_or_skipped",
     )
