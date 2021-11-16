@@ -270,7 +270,7 @@ def _failure_callback(context):
 with DAG(
     "pavel_dag", schedule_interval="0 * * * *", catchup=False, start_date=days_ago(2)
 ) as dag:
-    s3_check = PythonSensor(
+    s3_check_sensor = PythonSensor(
         task_id="S3KeySensor",
         poke_interval=120,
         timeout=30,
@@ -289,13 +289,13 @@ with DAG(
     #     soft_fail=True,
     # )
 
-    load_data = PythonOperator(
+    load_data_operator = PythonOperator(
         task_id="load_data",
         python_callable=load_data,
         trigger_rule="none_failed_or_skipped",
     )
 
-    copy_hdfs_task = BashOperator(
+    copy_hdfs_task_operator = BashOperator(
         task_id="copy_hdfs_task",
         bash_command="hdfs dfs -mkdir -p /user/shahidkubik/amazon_reviews/staging/ && hadoop fs -put -f /tmp/pavel_kond/tmp/ /user/shahidkubik/amazon_reviews/staging && rm -r /tmp/pavel_kond",
     )
@@ -303,7 +303,7 @@ with DAG(
     with TaskGroup(
         "create_tables",
         prefix_group_id=False,
-    ) as create_tables:
+    ) as create_tables_group:
 
         create_all_raitings_hql = """
             CREATE TABLE IF NOT EXISTS all_raitings(
@@ -353,7 +353,7 @@ with DAG(
             LOCATION '/user/shahidkubik/amazon_reviews/product_scores';;
         """
 
-        create_all_raitings_table = HiveOperator(
+        create_all_raitings_table_operator = HiveOperator(
             hql=create_all_raitings_hql,
             hive_cli_conn_id="hive_staging",
             schema="pavel_kandratsionak",
@@ -361,7 +361,7 @@ with DAG(
             task_id="create_all_raitings"
         )
 
-        create_user_scores_table = HiveOperator(
+        create_user_scores_table_operator = HiveOperator(
             hql=create_user_scores_hql,
             hive_cli_conn_id="hive_staging",
             schema="pavel_kandratsionak",
@@ -369,7 +369,7 @@ with DAG(
             task_id="create_user_scores"
         )
 
-        create_reviews_table = HiveOperator(
+        create_reviews_table_operator = HiveOperator(
             hql=create_reviews_hql,
             hive_cli_conn_id="hive_staging",
             schema="pavel_kandratsionak",
@@ -377,7 +377,7 @@ with DAG(
             task_id="create_reviews"
         )
 
-        create_product_scores_table = HiveOperator(
+        create_product_scores_table_operator = HiveOperator(
             hql=create_product_scores_hql,
             hive_cli_conn_id="hive_staging",
             schema="pavel_kandratsionak",
@@ -395,7 +395,7 @@ with DAG(
     #     )
     # )
 
-    create_temp_tables = PythonOperator(
+    create_temp_tables_operator = PythonOperator(
         task_id="create_temp_tables",
         python_callable=create_temp_tables,
         trigger_rule="none_failed_or_skipped",
@@ -404,7 +404,7 @@ with DAG(
     with TaskGroup(
         "dynamic_tasks_group_drop_duplicates",
         prefix_group_id=False,
-    ) as dynamic_tasks_group_drop_duplicates:
+    ) as drop_duplicates_group:
 
         drop_duplicates_hql = """INSERT OVERWRITE TABLE {{ params.table_name }} SELECT DISTINCT * FROM {{ params.table_name }};"""
 
@@ -431,4 +431,4 @@ with DAG(
 
         parquet_drop_duplicates
 
-s3_check >> load_data >> copy_hdfs_task >> create_tables >> create_temp_tables >> dynamic_tasks_group_drop_duplicates
+s3_check_sensor >> load_data_operator >> copy_hdfs_task_operator >> create_tables_group >> create_temp_tables_operator >> drop_duplicates_group
