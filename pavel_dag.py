@@ -233,21 +233,22 @@ with DAG(
             start_date=parent_dag.start_date
         )
 
-        start = DummyOperator(
-            task_id='start',
-            dag=dag_subdag
-        )
-        logging.info('==========', keys)
+        with dag_subdag:
+            start = DummyOperator(
+                task_id='start',
+                dag=dag_subdag
+            )
+            logging.info('==========', keys)
 
-        try:
-            if len(parent_dag.get_active_runs()) > 0:
-                test_list = parent_dag.get_task_instances(settings.Session, start_date=parent_dag.get_active_runs()[-1])[-1].xcom_pull(
-                    dag_id=parent_dag_name,
-                    task_ids='load_data')
+            try:
+                if len(parent_dag.get_active_runs()) > 0:
+                    test_list = parent_dag.get_task_instances(settings.Session, start_date=parent_dag.get_active_runs()[-1])[-1].xcom_pull(
+                        dag_id=parent_dag_name,
+                        task_ids='load_data')
 
-                logging.info('==========', test_list)
-        except Exception as e:
-            logging.warning(f"ERROR: {e}")
+                    logging.info('==========', test_list)
+            except Exception as e:
+                logging.warning(f"ERROR: {e}")
         # keys_list = Variable.get(
         #     "list_of_keys", default_var=[], deserialize_json=True
         # )
