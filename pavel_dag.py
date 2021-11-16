@@ -226,7 +226,7 @@ with DAG(
         dag=dag,
     )
 
-    def load_subdag(parent_dag_name, child_dag_name, args, parent_dag=None):
+    def load_subdag(parent_dag_name, child_dag_name, args, parent_dag):
         dag_subdag = DAG(
             dag_id="{0}.{1}".format(parent_dag_name, child_dag_name),
             default_args=args,
@@ -364,6 +364,7 @@ with DAG(
             parent_dag_name="pavel_dag",
             child_dag_name="load_tasks_dag",
             args=[],
+            parent_dag=dag
         ),
         dag=dag,
     )
