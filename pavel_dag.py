@@ -4,6 +4,7 @@ import os
 import shutil
 import sys
 import xml.etree.ElementTree as ET
+from datetime import datetime
 from os import remove
 from pathlib import Path
 from urllib.request import urlopen, urlretrieve
@@ -113,36 +114,37 @@ def load_subdag(parent_dag_name, child_dag_name, args, keys, parent_dag):
         dag_id="{0}.{1}".format(parent_dag_name, child_dag_name),
         default_args=args,
         schedule_interval=None,
-        start_date=parent_dag.start_date
+        start_date=datetime.now()
     )
-    test_list = []
-    try:
-        if len(parent_dag.get_active_runs()) > 0:
-            test_list = parent_dag.get_task_instances(settings.Session, start_date=parent_dag.get_active_runs()[-1])[-1].xcom_pull(
-                dag_id=parent_dag_name,
-                task_ids='load_data')
+    with subdag:
+        test_list = []
+        try:
+            if len(parent_dag.get_active_runs()) > 0:
+                test_list = parent_dag.get_task_instances(settings.Session, start_date=parent_dag.get_active_runs()[-1])[-1].xcom_pull(
+                    dag_id=parent_dag_name,
+                    task_ids='load_data')
 
-            logging.info('==========', test_list)
-    except Exception as e:
-        logging.warning(f"ERROR: {e}")
+                logging.info('==========', test_list)
+        except Exception as e:
+            logging.warning(f"ERROR: {e}")
 
-    def echo_values():
-        logging.info(f'keys: {keys}')
-        logging.info(f'keys_list: {Variable.get("list_of_keys", default_var=[], deserialize_json=True)}')
-        logging.info(f"test_list: {test_list}")
+        def echo_values():
+            logging.info(f'keys: {keys}')
+            logging.info(f'keys_list: {Variable.get("list_of_keys", default_var=[], deserialize_json=True)}')
+            logging.info(f"test_list: {test_list}")
 
-    start = DummyOperator(
-        task_id='start',
-        dag=subdag
-    )
-    logging.info('==========', keys)
+        start = DummyOperator(
+            task_id='start',
+            dag=subdag
+        )
+        logging.info('==========', keys)
 
-    echo = PythonOperator(
-        task_id="echo",
-        python_callable=echo_values,
-        trigger_rule="none_failed_or_skipped",
-        dag=subdag
-    )
+        echo = PythonOperator(
+            task_id="echo",
+            python_callable=echo_values,
+            trigger_rule="none_failed_or_skipped",
+            dag=subdag
+        )
     # keys_list = Variable.get(
     #     "list_of_keys", default_var=[], deserialize_json=True
     # )
@@ -255,7 +257,7 @@ def load_subdag(parent_dag_name, child_dag_name, args, keys, parent_dag):
             #     create_temp_table >> parquet_all_raitings >> parquet_scores >> parquet_reviews >> parquet_product_scores >> remove_temp_table
         # start >> dynamic_tasks_group_load
         # start >> echo
-    start.set_downstream(echo)
+        start.set_downstream(echo)
     return subdag
 
 
