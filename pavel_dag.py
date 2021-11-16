@@ -122,13 +122,13 @@ def _failure_callback(context):
     sys.stderr.write(f"ERROR: {context['exception']}")
 
 
-def load_subdag(parent_dag, child_dag_name, args):
-    subdag = DAG(
-        dag_id='%s.%s' % (parent_dag.dag_id, child_dag_name),
-        default_args=parent_dag.default_args,
-        schedule_interval=None,
-        start_date=days_ago(2)
-    )
+# def load_subdag(parent_dag, child_dag_name, args):
+#     subdag = DAG(
+#         dag_id='%s.%s' % (parent_dag.dag_id, child_dag_name),
+#         default_args=parent_dag.default_args,
+#         schedule_interval=None,
+#         start_date=days_ago(2)
+#     )
     # test_list = []
     # try:
     #     if len(parent_dag.get_active_runs()) > 0:
@@ -140,18 +140,18 @@ def load_subdag(parent_dag, child_dag_name, args):
     # except Exception as e:
     #     logging.warning(f"ERROR: {e}")
 
-    start = DummyOperator(
-        task_id='start',
-        dag=subdag
-    )
+    # start = DummyOperator(
+    #     task_id='start',
+    #     dag=subdag
+    # )
     # logging.info('==========', keys)
 
-    echo = PythonOperator(
-        task_id="echo",
-        python_callable=echo_values,
-        trigger_rule="none_failed_or_skipped",
-        dag=subdag,
-    )
+    # echo = PythonOperator(
+    #     task_id="echo",
+    #     python_callable=echo_values,
+    #     trigger_rule="none_failed_or_skipped",
+    #     dag=subdag,
+    # )
     # keys_list = Variable.get(
     #     "list_of_keys", default_var=[], deserialize_json=True
     # )
@@ -263,8 +263,8 @@ def load_subdag(parent_dag, child_dag_name, args):
                 # create_temp_table >> parquet_all_raitings >> parquet_scores >> parquet_reviews >> parquet_product_scores >> remove_temp_table
         # start >> dynamic_tasks_group_load
         # start >> echo
-    start.set_downstream(echo)
-    return subdag
+    # start.set_downstream(echo)
+    # return subdag
 
 
 with DAG(
