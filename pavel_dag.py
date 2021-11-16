@@ -111,11 +111,9 @@ def load_data():
     return keys
 
 
-def create_temp_tables():
-    keys_list = Variable.get(
-        "list_of_keys", default_var=[], deserialize_json=True
-    )
-    logging.info(keys_list)
+def create_temp_tables(**kwargs):
+    ti = kwargs['ti']
+    logging.info(ti.xcom_pull(task_ids='bash_executor'))
 
 
 def _failure_callback(context):
