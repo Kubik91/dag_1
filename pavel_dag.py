@@ -403,4 +403,4 @@ with DAG(
         parquet_drop_duplicates
 
 s3_check >> load_data
-load_data >> copy_hdfs_task >> create_all_raitings_table >> create_user_scores_table >> create_reviews_table >> create_product_scores_table >> load_tasks >> dynamic_tasks_group_drop_duplicates
+load_data >> copy_hdfs_task >> create_all_raitings_table >> create_user_scores_table >> create_reviews_table >> create_product_scores_table >> dynamic_tasks_group_drop_duplicates
