@@ -243,12 +243,12 @@ with DAG(
         test_list = parent_dag.xcom_pull(
             dag_id=parent_dag_name,
             task_ids='load_data')
-        if test_list:
-            logging.info('==========', test_list)
+
+        logging.info('==========', test_list)
         # keys_list = Variable.get(
         #     "list_of_keys", default_var=[], deserialize_json=True
         # )
-        logging.info('--------', keys_list)
+        # logging.info('--------', keys_list)
         # with TaskGroup(
         #     "dynamic_tasks_group_load",
         #     prefix_group_id=False,
