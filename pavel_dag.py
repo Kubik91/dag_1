@@ -56,6 +56,7 @@ def test_data():
     os.remove("/tmp/pavel_kond/tmp/All_Beauty_1.json")
     os.remove("/tmp/pavel_kond/tmp/All_Beauty_2.json")
     _set_keys(keys)
+    return keys
 
 
 def json2csv(data, key):
@@ -101,6 +102,7 @@ def load_data():
             sys.stdout.write(f"---, {key}")
     print("-------------", keys)
     _set_keys(keys)
+    return keys
 
 
 def _failure_callback(context):
@@ -224,7 +226,7 @@ with DAG(
         dag=dag,
     )
 
-    def load_subdag(parent_dag_name, child_dag_name, args):
+    def load_subdag(parent_dag_name, child_dag_name, args, parent_dag=None):
         dag_subdag = DAG(
             dag_id="{0}.{1}".format(parent_dag_name, child_dag_name),
             default_args=args,
@@ -236,6 +238,13 @@ with DAG(
             start = DummyOperator(
                 task_id='start',
             )
+
+            if len(parent_dag.get_active_runs()) > 0:
+                test_list = parent_dag.xcom_pull(
+                    dag_id=parent_dag_name,
+                    task_ids='load_data')
+                if test_list:
+                    logging.info('==========', test_list)
             keys_list = Variable.get(
                 "list_of_keys", default_var=[], deserialize_json=True
             )
@@ -352,8 +361,8 @@ with DAG(
     load_tasks = SubDagOperator(
         task_id="load_tasks",
         subdag=load_subdag(
-            parent_dag_name="example_subdag_operator",
-            child_dag_name="load_tasks",
+            parent_dag_name="pavel_dag",
+            child_dag_name="load_tasks_dag",
             args=[],
         ),
         dag=dag,
