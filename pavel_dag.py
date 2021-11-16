@@ -292,89 +292,94 @@ with DAG(
         bash_command="hdfs dfs -mkdir -p /user/shahidkubik/amazon_reviews/staging/ && hadoop fs -put -f /tmp/pavel_kond/tmp/ /user/shahidkubik/amazon_reviews/staging && rm -r /tmp/pavel_kond",
     )
 
-    create_all_raitings_hql = """
-        CREATE TABLE IF NOT EXISTS all_raitings(
-            overall numeric(2,1), 
-            verified boolean, 
-            reviewtime date, 
-            reviewerid string, 
-            asin string, 
-            reviewername string, 
-            reviewtext string, 
-            summary string, 
-            unixreviewtime int)
-        PARTITIONED BY (part_year int)
-        STORED AS PARQUET
-        LOCATION '/user/shahidkubik/amazon_reviews/all_raitings';
-    """
+    with TaskGroup(
+        "create_tables",
+        prefix_group_id=False,
+    ) as create_tables:
 
-    create_user_scores_hql = """
-        CREATE TABLE IF NOT EXISTS user_scores(
-            reviewerid string, 
-            asin string,
-            overall numeric(2,1),
-            reviewtime date)
-        PARTITIONED BY (part_year int)
-        STORED AS PARQUET
-        LOCATION '/user/shahidkubik/amazon_reviews/user_scores';
-    """
+        create_all_raitings_hql = """
+            CREATE TABLE IF NOT EXISTS all_raitings(
+                overall numeric(2,1), 
+                verified boolean, 
+                reviewtime date, 
+                reviewerid string, 
+                asin string, 
+                reviewername string, 
+                reviewtext string, 
+                summary string, 
+                unixreviewtime int)
+            PARTITIONED BY (part_year int)
+            STORED AS PARQUET
+            LOCATION '/user/shahidkubik/amazon_reviews/all_raitings';
+        """
 
-    create_reviews_hql = """
-        CREATE TABLE IF NOT EXISTS reviews(
-            reviewerid string, 
-            reviewtext string,
-            overall numeric(2,1),
-            reviewtime date)
-        PARTITIONED BY (part_year int)
-        STORED AS PARQUET
-        LOCATION '/user/shahidkubik/amazon_reviews/reviews';;
-    """
+        create_user_scores_hql = """
+            CREATE TABLE IF NOT EXISTS user_scores(
+                reviewerid string, 
+                asin string,
+                overall numeric(2,1),
+                reviewtime date)
+            PARTITIONED BY (part_year int)
+            STORED AS PARQUET
+            LOCATION '/user/shahidkubik/amazon_reviews/user_scores';
+        """
 
-    create_product_scores_hql = """
-        CREATE TABLE IF NOT EXISTS product_scores(
-            asin string, 
-            overall numeric(2,1), 
-            reviewtime date)
-        PARTITIONED BY (part_year int)
-        STORED AS PARQUET
-        LOCATION '/user/shahidkubik/amazon_reviews/product_scores';;
-    """
+        create_reviews_hql = """
+            CREATE TABLE IF NOT EXISTS reviews(
+                reviewerid string, 
+                reviewtext string,
+                overall numeric(2,1),
+                reviewtime date)
+            PARTITIONED BY (part_year int)
+            STORED AS PARQUET
+            LOCATION '/user/shahidkubik/amazon_reviews/reviews';;
+        """
 
-    create_all_raitings_table = HiveOperator(
-        hql=create_all_raitings_hql,
-        hive_cli_conn_id="hive_staging",
-        schema="pavel_kandratsionak",
-        hiveconf_jinja_translate=True,
-        task_id="create_all_raitings",
-        dag=dag,
-    )
+        create_product_scores_hql = """
+            CREATE TABLE IF NOT EXISTS product_scores(
+                asin string, 
+                overall numeric(2,1), 
+                reviewtime date)
+            PARTITIONED BY (part_year int)
+            STORED AS PARQUET
+            LOCATION '/user/shahidkubik/amazon_reviews/product_scores';;
+        """
 
-    create_user_scores_table = HiveOperator(
-        hql=create_user_scores_hql,
-        hive_cli_conn_id="hive_staging",
-        schema="pavel_kandratsionak",
-        hiveconf_jinja_translate=True,
-        task_id="create_user_scores",
-        dag=dag,
-    )
+        create_all_raitings_table = HiveOperator(
+            hql=create_all_raitings_hql,
+            hive_cli_conn_id="hive_staging",
+            schema="pavel_kandratsionak",
+            hiveconf_jinja_translate=True,
+            task_id="create_all_raitings",
+            dag=dag,
+        )
 
-    create_reviews_table = HiveOperator(
-        hql=create_reviews_hql,
-        hive_cli_conn_id="hive_staging",
-        schema="pavel_kandratsionak",
-        hiveconf_jinja_translate=True,
-        task_id="create_reviews",
-        dag=dag,
-    )
+        create_user_scores_table = HiveOperator(
+            hql=create_user_scores_hql,
+            hive_cli_conn_id="hive_staging",
+            schema="pavel_kandratsionak",
+            hiveconf_jinja_translate=True,
+            task_id="create_user_scores",
+            dag=dag,
+        )
 
-    create_product_scores_table = HiveOperator(
-        hql=create_product_scores_hql,
-        hive_cli_conn_id="hive_staging",
-        schema="pavel_kandratsionak",
-        hiveconf_jinja_translate=True,
-        task_id="create_product_scores",
-        dag=dag,
-    )
+        create_reviews_table = HiveOperator(
+            hql=create_reviews_hql,
+            hive_cli_conn_id="hive_staging",
+            schema="pavel_kandratsionak",
+            hiveconf_jinja_translate=True,
+            task_id="create_reviews",
+            dag=dag,
+        )
+
+        create_product_scores_table = HiveOperator(
+            hql=create_product_scores_hql,
+            hive_cli_conn_id="hive_staging",
+            schema="pavel_kandratsionak",
+            hiveconf_jinja_translate=True,
+            task_id="create_product_scores",
+            dag=dag,
+        )
 
     load_tasks = SubDagOperator(
         task_id="load_tasks",
@@ -419,4 +424,4 @@ with DAG(
 
         parquet_drop_duplicates
 
-s3_check >> load_data >> copy_hdfs_task >> create_all_raitings_table >> create_user_scores_table >> create_reviews_table >> create_product_scores_table >> load_tasks >> dynamic_tasks_group_drop_duplicates
+s3_check >> load_data >> copy_hdfs_task >> create_tables >> load_tasks >> dynamic_tasks_group_drop_duplicates
