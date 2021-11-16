@@ -229,7 +229,7 @@ with DAG(
         dag_subdag = DAG(
             dag_id="{0}.{1}".format(parent_dag_name, child_dag_name),
             default_args=args,
-            schedule_interval=parent_dag.schedule_interval,
+            schedule_interval="@once",
             start_date=parent_dag.start_date
         )
 
