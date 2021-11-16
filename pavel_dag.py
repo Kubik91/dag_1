@@ -12,7 +12,6 @@ from urllib.request import urlopen, urlretrieve
 import pandas as pd
 import requests
 from airflow import DAG, settings
-from airflow.executors.executor_loader import ExecutorLoader
 from airflow.models import Variable
 from airflow.operators.bash_operator import BashOperator
 from airflow.operators.hive_operator import HiveOperator
@@ -393,7 +392,7 @@ with DAG(
             keys="'{{ ti.xcom_pull(task_ids='load_config', dag_id='pavel_dag' }}'",
             parent_dag=dag
         ),
-        executor=ExecutorLoader.get_default_executor(),
+        session=settings.Session,
         dag=dag,
     )
 
