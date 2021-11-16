@@ -11,8 +11,6 @@ from urllib.request import urlopen, urlretrieve
 import pandas as pd
 import requests
 from airflow import DAG
-from airflow.example_dags.subdags.subdag import subdag
-from airflow.exceptions import AirflowSensorTimeout
 from airflow.models import Variable
 from airflow.operators.bash_operator import BashOperator
 from airflow.operators.hive_operator import HiveOperator
@@ -227,17 +225,16 @@ with DAG(
     )
 
     def load_subdag(parent_dag_name, child_dag_name, args, keys, parent_dag):
-        dag_subdag = DAG(
+        with DAG(
             dag_id="{0}.{1}".format(parent_dag_name, child_dag_name),
             default_args=args,
             schedule_interval="@once",
             start_date=parent_dag.start_date
-        )
-        with dag_subdag:
+        ) as subdag:
 
             start = DummyOperator(
                 task_id='start',
-                dag=dag_subdag
+                dag=subdag
             )
             logging.info('==========', keys)
 
