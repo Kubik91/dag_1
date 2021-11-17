@@ -1,13 +1,10 @@
-import gzip
 import logging
-import os
-import shutil
 import sys
 import xml.etree.ElementTree as ET
 from datetime import datetime
 from os import remove
 from pathlib import Path
-from urllib.request import urlopen, urlretrieve
+from urllib.request import urlopen
 
 import pandas as pd
 import requests
@@ -28,26 +25,6 @@ def S3KeySensor():
     xml = ET.fromstring(response.text)
     xmlns = xml.tag.replace("ListBucketResult", "")
     return bool(int(xml.find(f"{xmlns}KeyCount").text))
-
-
-def test_data():
-    urlretrieve(
-        "http://deepyeti.ucsd.edu/jianmo/amazon/categoryFiles/All_Beauty.json.gz",
-        "/tmp/pavel_kond/tmp/All_Beauty.json.gz",
-    )
-    with gzip.open("/tmp/pavel_kond/tmp/All_Beauty.json.gz", "rb") as f_in, open(
-        "/tmp/pavel_kond/tmp/All_Beauty_1.json", "wb"
-    ) as f_out_1, open("/tmp/pavel_kond/tmp/All_Beauty_2.json", "wb") as f_out_2:
-        shutil.copyfileobj(f_in, f_out_1)
-        shutil.copyfileobj(f_in, f_out_2)
-    keys = ["All_Beauty_1", "All_Beauty_2"]
-    for key in keys:
-        with open(f"{key}.json", "r") as data:
-            json2csv(data, key)
-    os.remove("/tmp/pavel_kond/tmp/All_Beauty.json.gz")
-    os.remove("/tmp/pavel_kond/tmp/All_Beauty_1.json")
-    os.remove("/tmp/pavel_kond/tmp/All_Beauty_2.json")
-    return keys
 
 
 def json2csv(data, key):
@@ -229,6 +206,16 @@ with DAG(
         task_id="create_temp_table",
     )
 
+    test_temp_hql = """SELECT * FROM data_temp LIMIT 5;"""
+
+    test_temp_table_operator = HiveOperator(
+        hql=test_temp_hql,
+        hive_cli_conn_id="hive_staging",
+        schema="pavel_kandratsionak",
+        hiveconf_jinja_translate=True,
+        task_id="test_temp_table",
+    )
+
     with TaskGroup(
         "update_tables_group",
         prefix_group_id=False,
@@ -295,4 +282,4 @@ with DAG(
                 params={"table_name": f"{table}"},
             )
 
-s3_check_sensor >> load_data_operator >> copy_hdfs_task_operator >> create_tables_group >> create_temp_table_operator >> update_tables_group >> remove_temp_table_operator >> drop_duplicates_group
+s3_check_sensor >> load_data_operator >> copy_hdfs_task_operator >> create_tables_group >> create_temp_table_operator >> test_temp_table_operator >> update_tables_group >> remove_temp_table_operator >> drop_duplicates_group
