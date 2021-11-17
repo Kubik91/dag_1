@@ -1,4 +1,5 @@
 import gzip
+import json
 import logging
 import os
 import shutil
@@ -81,6 +82,9 @@ def json2csv(data, key):
             print(line, file=jsonfile)
         else:
             print("]", file=jsonfile)
+    with open(f"/tmp/pavel_kond/tmp/{key}_all.json", "r") as textfile:
+        print(textfile.read()[:50])
+        print(json.load(textfile.read()))
     df = pd.read_json(f"/tmp/pavel_kond/tmp/{key}_all.json", orient="records")
     df[columns].to_csv(f"/tmp/pavel_kond/tmp/{key}.csv")
     remove(f"/tmp/pavel_kond/tmp/{key}_all.json")
