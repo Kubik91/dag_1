@@ -95,7 +95,7 @@ with DAG(
 
     copy_hdfs_task_operator = BashOperator(
         task_id="copy_hdfs_task",
-        bash_command="hdfs dfs -mkdir -p /user/shahidkubik/amazon_reviews/staging/ && hadoop fs -put -f /tmp/pavel_kond/tmp/* /user/shahidkubik/amazon_reviews/staging && hdfs dfs -chmod -R 777 && rm -r /tmp/pavel_kond",
+        bash_command="hdfs dfs -mkdir -p /user/shahidkubik/amazon_reviews/staging/ && hadoop fs -put -f /tmp/pavel_kond/tmp/* /user/shahidkubik/amazon_reviews/staging && hdfs dfs -chmod -R 777 /user/shahidkubik/amazon_reviews/ && rm -r /tmp/pavel_kond",
     )
 
     with TaskGroup(
