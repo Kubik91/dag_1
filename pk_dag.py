@@ -95,7 +95,8 @@ with DAG(
 
     copy_hdfs_task_operator = BashOperator(
         task_id="copy_hdfs_task",
-        bash_command="hdfs dfs -mkdir -p /user/shahidkubik/amazon_reviews/staging/ "
+        bash_command="hadoop fs -rm -r /user/shahidkubik/amazon_reviews"
+                     "&& hdfs dfs -mkdir -p /user/shahidkubik/amazon_reviews/staging/ "
                      "&& hadoop fs -put -f /tmp/pavel_kond/tmp/* /user/shahidkubik/amazon_reviews/staging "
                      "&& hdfs dfs -chmod -R 777 /user/shahidkubik/amazon_reviews/ "
                      "&& rm -r /tmp/pavel_kond",
@@ -209,7 +210,7 @@ with DAG(
         task_id="create_temp_table",
     )
 
-    test_temp_hql = """SELECT * FROM data_temp WHERE overall is not NULL LIMIT 5;"""
+    test_temp_hql = """SELECT * FROM data_temp LIMIT 5;"""
 
     test_temp_table_operator = HiveOperator(
         hql=test_temp_hql,
@@ -228,13 +229,13 @@ with DAG(
             "update_all_raitings_hql": """INSERT INTO TABLE all_raitings
                     SELECT overall, verified, from_unixtime(unix_timestamp(reviewtime,'MM dd, yyyy'),'yyyy-MM-dd') as reviewtime,
                     reviewerid, asin, reviewername, reviewtext, summary, unixreviewtime,
-                    from_unixtime(unix_timestamp(reviewtime,'MM dd, yyyy'),'yyyy') as part_year FROM data_temp WHERE overall is not NULL;""",
+                    from_unixtime(unix_timestamp(reviewtime,'MM dd, yyyy'),'yyyy') as part_year FROM data_temp;""",
             "update_user_scores_hql": """INSERT INTO TABLE user_scores SELECT reviewerid, asin, overall, reviewtime,
-                    from_unixtime(unix_timestamp(reviewtime,'MM dd, yyyy'),'yyyy') as part_year FROM data_temp WHERE overall is not NULL;""",
+                    from_unixtime(unix_timestamp(reviewtime,'MM dd, yyyy'),'yyyy') as part_year FROM data_temp;""",
             "update_reviews_hql": """INSERT INTO TABLE reviews SELECT reviewerid, reviewtext, overall, reviewtime,
-                    from_unixtime(unix_timestamp(reviewtime,'MM dd, yyyy'),'yyyy') as part_year FROM data_temp WHERE overall is not NULL;""",
+                    from_unixtime(unix_timestamp(reviewtime,'MM dd, yyyy'),'yyyy') as part_year FROM data_temp;""",
             "update_product_scores_hql": """INSERT INTO TABLE product_scores SELECT asin, overall, reviewtime,
-                    from_unixtime(unix_timestamp(reviewtime,'MM dd, yyyy'),'yyyy') as part_year FROM data_temp WHERE overall is not NULL;""",
+                    from_unixtime(unix_timestamp(reviewtime,'MM dd, yyyy'),'yyyy') as part_year FROM data_temp;""",
         }
 
         for table in ["all_raitings", "user_scores", "reviews", "product_scores"]:
