@@ -41,12 +41,12 @@ def json2csv(data, key):
     ]
     Path("/tmp/pavel_kond/tmp/").mkdir(parents=True, exist_ok=True)
     with open(f"/tmp/pavel_kond/tmp/{key}_all.json", "w") as jsonfile:
-        for i, line in enumerate(data):
+        for i, line in enumerate(data.decode("utf-8")):
             if not i:
                 print("[", file=jsonfile)
             else:
                 print(",", file=jsonfile)
-            print(line.decode("utf-8"), file=jsonfile, end="")
+            print(line, file=jsonfile, end="")
         else:
             print("]", file=jsonfile)
     df = pd.read_json(f"/tmp/pavel_kond/tmp/{key}_all.json", orient="records")
