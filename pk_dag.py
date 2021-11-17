@@ -35,7 +35,7 @@ def test_data():
         "/tmp/pavel_kond/tmp/All_Beauty.json.gz",
     )
     with gzip.open("/tmp/pavel_kond/tmp/All_Beauty.json.gz", "rb") as f_in, open(
-        "/tmp/pavel_kond/tmp/All_Beauty_1.json", "wb"
+            "/tmp/pavel_kond/tmp/All_Beauty_1.json", "wb"
     ) as f_out_1, open("/tmp/pavel_kond/tmp/All_Beauty_2.json", "wb") as f_out_2:
         shutil.copyfileobj(f_in, f_out_1)
         shutil.copyfileobj(f_in, f_out_2)
@@ -97,7 +97,10 @@ def _failure_callback(context):
 
 
 with DAG(
-    "pk_dag", schedule_interval="0 * * * *", catchup=False, start_date=days_ago(2)
+        "pavel_kond_dag",
+        schedule_interval="0 * * * *",
+        catchup=False,
+        start_date=days_ago(2),
 ) as dag:
     s3_check_sensor = PythonSensor(
         task_id="S3KeySensor",
@@ -117,12 +120,14 @@ with DAG(
 
     copy_hdfs_task_operator = BashOperator(
         task_id="copy_hdfs_task",
-        bash_command="hdfs dfs -mkdir -p /user/shahidkubik/amazon_reviews/staging/ && hadoop fs -put -f /tmp/pavel_kond/tmp/ /user/shahidkubik/amazon_reviews/staging && rm -r /tmp/pavel_kond",
+        bash_command="hdfs dfs -mkdir -p /user/shahidkubik/amazon_reviews/staging/ "
+                     "&& hadoop fs -put -f /tmp/pavel_kond/tmp/ /user/shahidkubik/amazon_reviews/staging "
+                     "&& rm -r /tmp/pavel_kond",
     )
 
     with TaskGroup(
-        "create_tables",
-        prefix_group_id=False,
+            "create_tables",
+            prefix_group_id=False,
     ) as create_tables_group:
 
         create_all_raitings_hql = """
@@ -228,9 +233,19 @@ with DAG(
         task_id="create_temp_table",
     )
 
+    test_temp_hql = """SELECT * FROM data_temp LIMIT 5;"""
+
+    test_temp_table_operator = HiveOperator(
+        hql=test_temp_hql,
+        hive_cli_conn_id="hive_staging",
+        schema="pavel_kandratsionak",
+        hiveconf_jinja_translate=True,
+        task_id="test_temp_table",
+    )
+
     with TaskGroup(
-        "update_tables_group",
-        prefix_group_id=False,
+            "update_tables_group",
+            prefix_group_id=False,
     ) as update_tables_group:
 
         update_tables_hql = {
@@ -247,7 +262,6 @@ with DAG(
         }
 
         for table in ["all_raitings", "user_scores", "reviews", "product_scores"]:
-
             parquet_table_operator = HiveOperator(
                 hql=update_tables_hql.get(f"update_{table}_hql"),
                 hive_cli_conn_id="hive_staging",
@@ -267,14 +281,13 @@ with DAG(
     )
 
     with TaskGroup(
-        "drop_duplicates_group",
-        prefix_group_id=False,
+            "drop_duplicates_group",
+            prefix_group_id=False,
     ) as drop_duplicates_group:
 
         drop_duplicates_hql = """INSERT OVERWRITE TABLE {{ params.table_name }} SELECT DISTINCT * FROM {{ params.table_name }};"""
 
         for table in ["all_raitings", "user_scores", "reviews", "product_scores"]:
-
             create_all_raitings_hql = """
                 CREATE TABLE IF NOT EXISTS user_scores(
                     reviewerid string, 
@@ -311,4 +324,4 @@ with DAG(
                 params={"table_name": f"{table}"},
             )
 
-s3_check_sensor >> load_data_operator >> copy_hdfs_task_operator >> create_tables_group >> create_temp_table_operator >> update_tables_group >> remove_temp_table_operator >> drop_duplicates_group >> test_group
+s3_check_sensor >> load_data_operator >> copy_hdfs_task_operator >> create_tables_group >> create_temp_table_operator >> test_temp_table_operator >> update_tables_group >> remove_temp_table_operator >> drop_duplicates_group >> test_group
