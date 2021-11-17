@@ -50,7 +50,8 @@ def json2csv(data, key):
         else:
             print("]", file=jsonfile)
     df = pd.read_json(f"/tmp/pavel_kond/tmp/{key}_all.json", orient="records")
-    df.fillna("")[columns].to_csv(f"/tmp/pavel_kond/tmp/{key}.csv", index=False)
+    df.columns = map(str.lower, df.columns)
+    df[map(str.lower, columns)].to_csv(f"/tmp/pavel_kond/tmp/{key}.csv", index=False, header=False)
     remove(f"/tmp/pavel_kond/tmp/{key}_all.json")
 
 
@@ -210,7 +211,7 @@ with DAG(
         task_id="create_temp_table",
     )
 
-    test_temp_hql = """SELECT * FROM data_temp LIMIT 5;"""
+    test_temp_hql = """SELECT * FROM data_temp WHERE reviewerid is NOT NULL LIMIT 5;"""
 
     test_temp_table_operator = HiveOperator(
         hql=test_temp_hql,
@@ -229,13 +230,13 @@ with DAG(
             "update_all_raitings_hql": """INSERT INTO TABLE all_raitings
                     SELECT overall, verified, from_unixtime(unix_timestamp(reviewtime,'MM dd, yyyy'),'yyyy-MM-dd') as reviewtime,
                     reviewerid, asin, reviewername, reviewtext, summary, unixreviewtime,
-                    from_unixtime(unix_timestamp(reviewtime,'MM dd, yyyy'),'yyyy') as part_year FROM data_temp;""",
+                    from_unixtime(unix_timestamp(reviewtime,'MM dd, yyyy'),'yyyy') as part_year FROM data_temp WHERE reviewerid is NOT NULL;""",
             "update_user_scores_hql": """INSERT INTO TABLE user_scores SELECT reviewerid, asin, overall, reviewtime,
-                    from_unixtime(unix_timestamp(reviewtime,'MM dd, yyyy'),'yyyy') as part_year FROM data_temp;""",
+                    from_unixtime(unix_timestamp(reviewtime,'MM dd, yyyy'),'yyyy') as part_year FROM data_temp WHERE reviewerid is NOT NULL;""",
             "update_reviews_hql": """INSERT INTO TABLE reviews SELECT reviewerid, reviewtext, overall, reviewtime,
-                    from_unixtime(unix_timestamp(reviewtime,'MM dd, yyyy'),'yyyy') as part_year FROM data_temp;""",
+                    from_unixtime(unix_timestamp(reviewtime,'MM dd, yyyy'),'yyyy') as part_year FROM data_temp WHERE reviewerid is NOT NULL;""",
             "update_product_scores_hql": """INSERT INTO TABLE product_scores SELECT asin, overall, reviewtime,
-                    from_unixtime(unix_timestamp(reviewtime,'MM dd, yyyy'),'yyyy') as part_year FROM data_temp;""",
+                    from_unixtime(unix_timestamp(reviewtime,'MM dd, yyyy'),'yyyy') as part_year FROM data_temp WHERE reviewerid is NOT NULL;""",
         }
 
         for table in ["all_raitings", "user_scores", "reviews", "product_scores"]:
