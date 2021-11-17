@@ -50,7 +50,7 @@ def json2csv(data, key):
         else:
             print("]", file=jsonfile)
     df = pd.read_json(f"/tmp/pavel_kond/tmp/{key}_all.json", orient="records")
-    df[columns].to_csv(f"/tmp/pavel_kond/tmp/{key}.csv", index=False, header=False)
+    df.fillna("")[columns].to_csv(f"/tmp/pavel_kond/tmp/{key}.csv", index=False, header=False)
     remove(f"/tmp/pavel_kond/tmp/{key}_all.json")
 
 
