@@ -50,7 +50,7 @@ def json2csv(data, key):
         else:
             print("]", file=jsonfile)
     df = pd.read_json(f"/tmp/pavel_kond/tmp/{key}_all.json", orient="records")
-    df.fillna("")[columns].to_csv(f"/tmp/pavel_kond/tmp/{key}.csv", index=False, sep="|")
+    df.fillna("")[columns].to_csv(f"/tmp/pavel_kond/tmp/{key}.csv", index=False)
     remove(f"/tmp/pavel_kond/tmp/{key}_all.json")
 
 
@@ -198,7 +198,7 @@ with DAG(
                                     reviewtext string,
                                     summary string,
                                     unixreviewtime int)
-            ROW FORMAT delimited fields terminated by '|'
+            ROW FORMAT delimited fields terminated by ','
             STORED AS TEXTFILE
             LOCATION '/user/shahidkubik/staging/';"""
 
