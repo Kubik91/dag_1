@@ -233,10 +233,10 @@ with DAG(
         task_id="create_temp_table",
     )
 
-    test_temp_hql = """SELECT * FROM data_temp LIMIT 5;"""
+    test_temp_table_hql = """SELECT * FROM data_temp LIMIT 5;"""
 
     test_temp_table_operator = HiveOperator(
-        hql=test_temp_hql,
+        hql=test_temp_table_hql,
         hive_cli_conn_id="hive_staging",
         schema="pavel_kandratsionak",
         hiveconf_jinja_translate=True,
