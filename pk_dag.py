@@ -1,11 +1,9 @@
 import gzip
-import json
 import logging
 import os
 import shutil
 import sys
 import xml.etree.ElementTree as ET
-from datetime import datetime
 from os import remove
 from pathlib import Path
 from urllib.request import urlopen, urlretrieve
@@ -13,12 +11,9 @@ from urllib.request import urlopen, urlretrieve
 import pandas as pd
 import requests
 from airflow import DAG
-from airflow.models import Variable
 from airflow.operators.bash_operator import BashOperator
-from airflow.operators.dummy import DummyOperator
 from airflow.operators.hive_operator import HiveOperator
 from airflow.operators.python import PythonOperator
-from airflow.operators.subdag import SubDagOperator
 from airflow.sensors.python import PythonSensor
 from airflow.utils.dates import days_ago
 from airflow.utils.task_group import TaskGroup
