@@ -78,7 +78,10 @@ def _failure_callback(context):
 
 
 with DAG(
-    "pk_dag", schedule_interval="0 * * * *", catchup=False, start_date=days_ago(2)
+    "pavel_kond_dag",
+    schedule_interval="0 * * * *",
+    catchup=False,
+    start_date=days_ago(2),
 ) as dag:
     s3_check_sensor = PythonSensor(
         task_id="S3KeySensor",
@@ -98,8 +101,7 @@ with DAG(
 
     copy_hdfs_task_operator = BashOperator(
         task_id="copy_hdfs_task",
-        bash_command="hadoop fs -rm -r /user/shahidkubik/amazon_reviews"
-        "&& hdfs dfs -mkdir -p /user/shahidkubik/amazon_reviews/staging/ "
+        bash_command="hdfs dfs -mkdir -p /user/shahidkubik/amazon_reviews/staging/ "
         "&& hadoop fs -put -f /tmp/pavel_kond/tmp/* /user/shahidkubik/amazon_reviews/staging "
         "&& hdfs dfs -chmod -R 777 /user/shahidkubik/amazon_reviews/ "
         "&& rm -r /tmp/pavel_kond",
