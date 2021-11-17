@@ -282,4 +282,21 @@ with DAG(
                 params={"table_name": f"{table}"},
             )
 
-s3_check_sensor >> load_data_operator >> copy_hdfs_task_operator >> create_tables_group >> create_temp_table_operator >> test_temp_table_operator >> update_tables_group >> remove_temp_table_operator >> drop_duplicates_group
+    with TaskGroup(
+        "test_group",
+        prefix_group_id=False,
+    ) as test_group:
+
+        test_hql = """SELECT * FROM {{ params.table_name }} LIMIT 5;"""
+
+        for table in ["all_raitings", "user_scores", "reviews", "product_scores"]:
+            test_tebles = HiveOperator(
+                hql=test_hql,
+                hive_cli_conn_id="hive_staging",
+                schema="pavel_kandratsionak",
+                hiveconf_jinja_translate=True,
+                task_id=f"test_{table}",
+                params={"table_name": f"{table}"},
+            )
+
+s3_check_sensor >> load_data_operator >> copy_hdfs_task_operator >> create_tables_group >> create_temp_table_operator >> test_temp_table_operator >> update_tables_group >> remove_temp_table_operator >> drop_duplicates_group >> test_group
