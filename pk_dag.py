@@ -50,7 +50,7 @@ def json2csv(data, key):
         else:
             print("]", file=jsonfile)
     df = pd.read_json(f"/tmp/pavel_kond/tmp/{key}_all.json", orient="records")
-    df.fillna("")[columns].to_csv(f"/tmp/pavel_kond/tmp/{key}.csv", index=False, header=False)
+    df.fillna("")[columns].to_csv(f"/tmp/pavel_kond/tmp/{key}.csv", index=False)
     remove(f"/tmp/pavel_kond/tmp/{key}_all.json")
 
 
@@ -209,7 +209,7 @@ with DAG(
         task_id="create_temp_table",
     )
 
-    test_temp_hql = """SELECT * FROM data_temp LIMIT 5;"""
+    test_temp_hql = """SELECT * FROM data_temp WHERE overall is not NULL LIMIT 5;"""
 
     test_temp_table_operator = HiveOperator(
         hql=test_temp_hql,
