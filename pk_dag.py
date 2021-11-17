@@ -198,7 +198,7 @@ with DAG(
                                     reviewtext string,
                                     summary string,
                                     unixreviewtime int)
-            ROW FORMAT delimited fields terminated by ','
+            ROW FORMAT SERDE 'org.apache.hadoop.hive.serde2.OpenCSVSerde' 
             STORED AS TEXTFILE
             LOCATION '/user/shahidkubik/staging/';"""
 
