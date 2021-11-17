@@ -51,7 +51,9 @@ def json2csv(data, key):
             print("]", file=jsonfile)
     df = pd.read_json(f"/tmp/pavel_kond/tmp/{key}_all.json", orient="records")
     df.columns = map(str.lower, df.columns)
-    df[map(str.lower, columns)].to_csv(f"/tmp/pavel_kond/tmp/{key}.csv", index=False, header=False)
+    df[map(str.lower, columns)].to_csv(
+        f"/tmp/pavel_kond/tmp/{key}.csv", index=False, header=False
+    )
     remove(f"/tmp/pavel_kond/tmp/{key}_all.json")
 
 
@@ -97,10 +99,10 @@ with DAG(
     copy_hdfs_task_operator = BashOperator(
         task_id="copy_hdfs_task",
         bash_command="hadoop fs -rm -r /user/shahidkubik/amazon_reviews"
-                     "&& hdfs dfs -mkdir -p /user/shahidkubik/amazon_reviews/staging/ "
-                     "&& hadoop fs -put -f /tmp/pavel_kond/tmp/* /user/shahidkubik/amazon_reviews/staging "
-                     "&& hdfs dfs -chmod -R 777 /user/shahidkubik/amazon_reviews/ "
-                     "&& rm -r /tmp/pavel_kond",
+        "&& hdfs dfs -mkdir -p /user/shahidkubik/amazon_reviews/staging/ "
+        "&& hadoop fs -put -f /tmp/pavel_kond/tmp/* /user/shahidkubik/amazon_reviews/staging "
+        "&& hdfs dfs -chmod -R 777 /user/shahidkubik/amazon_reviews/ "
+        "&& rm -r /tmp/pavel_kond",
     )
 
     with TaskGroup(
@@ -263,34 +265,6 @@ with DAG(
         task_id="remove_temp_files",
         bash_command="hadoop fs -rm -r /user/shahidkubik/amazon_reviews/staging",
     )
-
-    # with TaskGroup(
-    #     "drop_duplicates",
-    #     prefix_group_id=False,
-    # ) as drop_duplicates_group:
-    #
-    #     drop_duplicates_hql = """INSERT OVERWRITE TABLE {{ params.table_name }} SELECT DISTINCT * FROM {{ params.table_name }};"""
-    #
-    #     for table in ["all_raitings", "user_scores", "reviews", "product_scores"]:
-    #
-    #         create_all_raitings_hql = """
-    #             CREATE TABLE IF NOT EXISTS user_scores(
-    #                 reviewerid string,
-    #                 asin string,
-    #                 overall numeric(2,1),
-    #                 reviewtime date)
-    #             PARTITIONED BY (part_year int)
-    #             STORED AS PARQUET
-    #             LOCATION '/user/shahidkubik/amazon_reviews/user_scores';
-    #             """
-    #         parquet_drop_duplicates = HiveOperator(
-    #             hql=drop_duplicates_hql,
-    #             hive_cli_conn_id="hive_staging",
-    #             schema="pavel_kandratsionak",
-    #             hiveconf_jinja_translate=True,
-    #             task_id=f"parquet_drop_duplicates_{table}",
-    #             params={"table_name": f"{table}"},
-    #         )
 
     with TaskGroup(
         "test",
