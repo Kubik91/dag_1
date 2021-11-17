@@ -295,8 +295,8 @@ with DAG(
             )
 
     with TaskGroup(
-            "test_group",
-            prefix_group_id=False,
+        "test_group",
+        prefix_group_id=False,
     ) as test_group:
 
         test_hql = """SELECT * FROM {{ params.table_name }} LIMIT 5;"""
@@ -310,5 +310,6 @@ with DAG(
                 task_id=f"test_{table}",
                 params={"table_name": f"{table}"},
             )
+
 
 s3_check_sensor >> load_data_operator >> copy_hdfs_task_operator >> create_tables_group >> create_temp_table_operator >> update_tables_group >> remove_temp_table_operator >> drop_duplicates_group >> test_group
