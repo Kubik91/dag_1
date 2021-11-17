@@ -26,11 +26,6 @@ from airflow.operators.dummy import DummyOperator
 data_url = "https://storage.yandexcloud.net/misis-zo-bigdata"
 
 
-def _set_keys(keys):
-    Variable.set(key="list_of_keys", value=keys, serialize_json=True)
-    print("Keys set")
-
-
 def S3KeySensor():
     logging.info(f"Start loading: {data_url}?list-type=2&encoding-type=url")
     response = requests.get(f"{data_url}?list-type=2&encoding-type=url")
@@ -56,7 +51,6 @@ def test_data():
     os.remove("/tmp/pavel_kond/tmp/All_Beauty.json.gz")
     os.remove("/tmp/pavel_kond/tmp/All_Beauty_1.json")
     os.remove("/tmp/pavel_kond/tmp/All_Beauty_2.json")
-    _set_keys(keys)
     return keys
 
 
@@ -79,21 +73,12 @@ def json2csv(data, key):
                 print("[", file=jsonfile)
             else:
                 print(",", file=jsonfile)
-            print(line, file=jsonfile)
+            print(line.decode("utf-8") , file=jsonfile, end="")
         else:
             print("]", file=jsonfile)
-    with open(f"/tmp/pavel_kond/tmp/{key}_all.json", "r") as textfile:
-        print(textfile.read()[:50])
-        print(json.load(textfile))
     df = pd.read_json(f"/tmp/pavel_kond/tmp/{key}_all.json", orient="records")
     df[columns].to_csv(f"/tmp/pavel_kond/tmp/{key}.csv")
     remove(f"/tmp/pavel_kond/tmp/{key}_all.json")
-
-
-def echo_values():
-    # logging.info(f'keys: {keys}')
-    logging.info(f'keys_list: {Variable.get("list_of_keys", default_var=[], deserialize_json=True)}')
-    # logging.info(f"test_list: {test_list}")
 
 
 def load_data():
@@ -113,7 +98,6 @@ def load_data():
         keys.append(key.text.split(".")[0])
         #     sys.stdout.write(f"---, {key}")
     print("-------------", keys)
-    _set_keys(keys)
     return keys
 
 
