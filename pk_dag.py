@@ -251,19 +251,6 @@ with DAG(
 
     remove_temp_table_hql = """DROP TABLE IF EXISTS data_temp;"""
 
-    remove_temp_table_operator = HiveOperator(
-        hql=remove_temp_table_hql,
-        hive_cli_conn_id="hive_staging",
-        schema="pavel_kandratsionak",
-        hiveconf_jinja_translate=True,
-        task_id="remove_temp_table",
-    )
-
-    remove_temp_files_operator = BashOperator(
-        task_id="remove_temp_files",
-        bash_command="hadoop fs -rm -r /user/shahidkubik/amazon_reviews/staging",
-    )
-
     with TaskGroup(
         "drop_duplicates",
         prefix_group_id=False,
@@ -309,4 +296,4 @@ with DAG(
                 params={"table_name": f"{table}"},
             )
 
-s3_check_sensor >> load_data_operator >> copy_hdfs_task_operator >> create_tables_group >> create_temp_table_operator >> test_temp_table_operator >> update_tables_group >> remove_temp_table_operator >> remove_temp_files_operator >> drop_duplicates_group >> test_group
+s3_check_sensor >> load_data_operator >> copy_hdfs_task_operator >> create_tables_group >> create_temp_table_operator >> test_temp_table_operator >> update_tables_group >> drop_duplicates_group >> test_group
