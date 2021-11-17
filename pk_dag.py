@@ -250,46 +250,46 @@ with DAG(
 
     remove_temp_table_hql = """DROP TABLE IF EXISTS data_temp;"""
 
-    remove_temp_table_operator = HiveOperator(
-        hql=remove_temp_table_hql,
-        hive_cli_conn_id="hive_staging",
-        schema="pavel_kandratsionak",
-        hiveconf_jinja_translate=True,
-        task_id="remove_temp_table",
-    )
+    # remove_temp_table_operator = HiveOperator(
+    #     hql=remove_temp_table_hql,
+    #     hive_cli_conn_id="hive_staging",
+    #     schema="pavel_kandratsionak",
+    #     hiveconf_jinja_translate=True,
+    #     task_id="remove_temp_table",
+    # )
+    #
+    # remove_temp_files_operator = BashOperator(
+    #     task_id="remove_temp_files",
+    #     bash_command="hadoop fs -rm -r /user/shahidkubik/amazon_reviews/staging",
+    # )
 
-    remove_temp_files_operator = BashOperator(
-        task_id="remove_temp_files",
-        bash_command="hadoop fs -rm -r /user/shahidkubik/amazon_reviews/staging",
-    )
-
-    with TaskGroup(
-        "drop_duplicates_group",
-        prefix_group_id=False,
-    ) as drop_duplicates_group:
-
-        drop_duplicates_hql = """INSERT OVERWRITE TABLE {{ params.table_name }} SELECT DISTINCT * FROM {{ params.table_name }};"""
-
-        for table in ["all_raitings", "user_scores", "reviews", "product_scores"]:
-
-            create_all_raitings_hql = """
-                CREATE TABLE IF NOT EXISTS user_scores(
-                    reviewerid string, 
-                    asin string,
-                    overall numeric(2,1),
-                    reviewtime date)
-                PARTITIONED BY (part_year int)
-                STORED AS PARQUET
-                LOCATION '/user/shahidkubik/amazon_reviews/user_scores';
-                """
-            parquet_drop_duplicates = HiveOperator(
-                hql=drop_duplicates_hql,
-                hive_cli_conn_id="hive_staging",
-                schema="pavel_kandratsionak",
-                hiveconf_jinja_translate=True,
-                task_id=f"parquet_drop_duplicates_{table}",
-                params={"table_name": f"{table}"},
-            )
+    # with TaskGroup(
+    #     "drop_duplicates_group",
+    #     prefix_group_id=False,
+    # ) as drop_duplicates_group:
+    #
+    #     drop_duplicates_hql = """INSERT OVERWRITE TABLE {{ params.table_name }} SELECT DISTINCT * FROM {{ params.table_name }};"""
+    #
+    #     for table in ["all_raitings", "user_scores", "reviews", "product_scores"]:
+    #
+    #         create_all_raitings_hql = """
+    #             CREATE TABLE IF NOT EXISTS user_scores(
+    #                 reviewerid string,
+    #                 asin string,
+    #                 overall numeric(2,1),
+    #                 reviewtime date)
+    #             PARTITIONED BY (part_year int)
+    #             STORED AS PARQUET
+    #             LOCATION '/user/shahidkubik/amazon_reviews/user_scores';
+    #             """
+    #         parquet_drop_duplicates = HiveOperator(
+    #             hql=drop_duplicates_hql,
+    #             hive_cli_conn_id="hive_staging",
+    #             schema="pavel_kandratsionak",
+    #             hiveconf_jinja_translate=True,
+    #             task_id=f"parquet_drop_duplicates_{table}",
+    #             params={"table_name": f"{table}"},
+    #         )
 
     with TaskGroup(
         "test_group",
@@ -308,4 +308,4 @@ with DAG(
                 params={"table_name": f"{table}"},
             )
 
-s3_check_sensor >> load_data_operator >> copy_hdfs_task_operator >> create_tables_group >> create_temp_table_operator >> test_temp_table_operator >> update_tables_group >> remove_temp_table_operator >> remove_temp_files_operator >> drop_duplicates_group >> test_group
+s3_check_sensor >> load_data_operator >> copy_hdfs_task_operator >> create_tables_group >> create_temp_table_operator >> test_temp_table_operator >> update_tables_group >> test_group
