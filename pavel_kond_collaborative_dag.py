@@ -12,5 +12,5 @@ with DAG(
 
     bash_run_pyspark_task = BashOperator(
         task_id='bash_run_pyspark_task',
-        bash_command= '''ssh ubuntu@rc1b-dataproc-m-h8jzox1botuktl9j.mdb.yandexcloud.net spark-submit --master yarn --deploy-mode cluster --conf spark.sql.catalogImplementation=hive /home/shahidkubik/pavel_kond_collaborative.py'''
+        bash_command= '''cp /home/shahidkubik/.ssh/id_rsa /tmp/id_rsa_shahidkubik && chmod 600 /tmp/id_rsa_shahidkubik && ssh -i /tmp/id_rsa_shahidkubik shahidkubik@rc1b-dataproc-m-h8jzox1botuktl9j.mdb.yandexcloud.net spark-submit --master yarn --deploy-mode cluster --conf spark.sql.catalogImplementation=hive /home/shahidkubik/pavel_kond_collaborative.py'''
     )
