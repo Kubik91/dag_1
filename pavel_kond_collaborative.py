@@ -36,6 +36,7 @@ if __name__ == "__main__":
                     SELECT u.*, YEAR(from_unixtime(cast(u.timestamp_ as int))) as year
                     FROM pavel_kandratsionak.user_scores_tmp as u;''')
 
+    if not spark.catalog._jcatalog.tableExists('pavel_kandratsionak.user_recommendations'):
         data = spark.sql("select * from pavel_kandratsionak.user_scores_collaborative")
 
         indexers = (StringIndexer(inputCol=column, outputCol=f"{column}_id").fit(data) for column in
@@ -68,7 +69,7 @@ if __name__ == "__main__":
             .select('userid_id', col('rec_exp.itemid'), col('rec_exp.rating'))
 
         recommendations = recommendations.withColumn("itemid_id", recommendations["itemid_id"].cast("double"))
-        recommendations.join(df.drop("rating"), on=["userid_id", "itemid_id"], how="left").select("userid", "itemid", "predict_rating")\
+        recommendations.join(df.drop("rating"), on=["userid_id", "itemid_id"], how="left").select("userid", "itemid", "rating")\
             .write.saveAsTable("pavel_kandratsionak.user_recommendations")
 
     spark.sql('SELECT * FROM pavel_kandratsionak.user_recommendations').show()
