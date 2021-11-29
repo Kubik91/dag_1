@@ -3,10 +3,9 @@
 
 from pyspark import SparkContext, SparkConf
 from pyspark.sql import SparkSession
-from pyspark.ml.feature import StringIndexer
 from pyspark.ml.recommendation import ALS
-from pyspark.ml import Pipeline
 from pyspark.sql.functions import explode, col
+from pyspark.sql.functions import monotonically_increasing_id
 
 if __name__ == "__main__":
     # create Spark context with Spark configuration
@@ -21,7 +20,7 @@ if __name__ == "__main__":
                         (userid string, itemid string, rating string, timestamp_ string)
                             ROW FORMAT DELIMITED FIELDS TERMINATED BY ','
                             STORED AS TEXTFILE
-                            LOCATION '/user/shahidkubik/ratings';''')
+                            LOCATION '/user/root/ratings';''')
 
     if not spark.catalog._jcatalog.tableExists('pavel_kandratsionak.user_scores_collaborative'):
         spark.sql('''CREATE TABLE IF NOT EXISTS pavel_kandratsionak.user_scores_collaborative (
@@ -39,16 +38,13 @@ if __name__ == "__main__":
     if not spark.catalog._jcatalog.tableExists('pavel_kandratsionak.user_recommendations'):
         data = spark.sql("select * from pavel_kandratsionak.user_scores_collaborative")
 
-        indexers = (StringIndexer(inputCol=column, outputCol=f"{column}_id").fit(data) for column in
-                    ["userid", "itemid"])
+        # if you don't need consecutive indices
+        uids = data.select("userid").distinct().withColumn("userid_id", monotonically_increasing_id())
+        iids = data.select("itemid").distinct().withColumn("itemid_id", monotonically_increasing_id())
 
-        pipeline = Pipeline(stages=indexers)
+        df = data.join(uids, on="userid", how="left").join(iids, on="itemid", how="left")
 
-        df = pipeline.fit(data).transform(data)
-
-        data = data.\
-            withColumn('rating', col('rating').cast('double')).\
-            drop('timestamp')
+        df = df.withColumn('rating', col('rating').cast('double')).drop('timestamp')
 
         als = ALS(
             maxIter=5,
@@ -62,7 +58,7 @@ if __name__ == "__main__":
             coldStartStrategy="drop"
         )
 
-        model = als.fit(data)
+        model = als.fit(df)
 
         recommendations = model.recommendForAllUsers(30)
         recommendations = recommendations.withColumn('rec_exp', explode('recommendations')) \
