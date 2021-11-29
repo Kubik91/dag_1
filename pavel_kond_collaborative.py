@@ -5,7 +5,8 @@ from pyspark import SparkContext, SparkConf
 from pyspark.sql import SparkSession
 from pyspark.ml.recommendation import ALS
 from pyspark.sql.functions import explode, col
-from pyspark.sql.functions import monotonically_increasing_id
+from pyspark.sql.window import Window
+from pyspark.sql.functions import row_number, lit
 
 if __name__ == "__main__":
     # create Spark context with Spark configuration
@@ -38,9 +39,11 @@ if __name__ == "__main__":
     if not spark.catalog._jcatalog.tableExists('pavel_kandratsionak.user_recommendations'):
         data = spark.sql("select * from pavel_kandratsionak.user_scores_collaborative")
 
-        # if you don't need consecutive indices
-        uids = data.select("userid").distinct().withColumn("userid_id", monotonically_increasing_id())
-        iids = data.select("itemid").distinct().withColumn("itemid_id", monotonically_increasing_id())
+        uw = Window.partitionBy(lit(1)).orderBy("userid")
+        uids = data.select("userid").distinct().withColumn("userid_id", row_number().over(uw))
+
+        iw = Window.partitionBy(lit(1)).orderBy("itemid")
+        iids = data.select("itemid").distinct().withColumn("itemid_id", row_number().over(iw))
 
         df = data.join(uids, on="userid", how="left").join(iids, on="itemid", how="left")
 
