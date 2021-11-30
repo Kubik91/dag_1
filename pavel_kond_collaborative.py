@@ -65,7 +65,7 @@ if __name__ == "__main__":
 
         recommendations = model.recommendForAllUsers(30)
         recommendations = recommendations.withColumn('rec_exp', explode('recommendations')) \
-            .select('userid_id', col('rec_exp.itemid'), col('rec_exp.rating'))
+            .select('userid_id', col('rec_exp.itemid_id'), col('rec_exp.rating'))
 
         recommendations = recommendations.withColumn("itemid_id", recommendations["itemid_id"].cast("double"))
         recommendations.join(df.drop("rating"), on=["userid_id", "itemid_id"], how="left").select("userid", "itemid", "rating")\
