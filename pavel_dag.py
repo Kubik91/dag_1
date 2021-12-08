@@ -437,4 +437,11 @@ with DAG(
 
         parquet_drop_duplicates
 
-s3_check_sensor >> load_data_operator >> copy_hdfs_task_operator >> create_tables_group >> create_temp_tables_operator >> drop_duplicates_group
+(
+    s3_check_sensor
+    >> load_data_operator
+    >> copy_hdfs_task_operator
+    >> create_tables_group
+    >> create_temp_tables_operator
+    >> drop_duplicates_group
+)

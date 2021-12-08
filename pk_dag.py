@@ -283,4 +283,15 @@ with DAG(
                 params={"table_name": f"{table}"},
             )
 
-s3_check_sensor >> load_data_operator >> copy_hdfs_task_operator >> create_tables_group >> create_temp_table_operator >> test_temp_table_operator >> update_tables_group >> remove_temp_table_operator >> remove_temp_files_operator >> test_group
+(
+    s3_check_sensor
+    >> load_data_operator
+    >> copy_hdfs_task_operator
+    >> create_tables_group
+    >> create_temp_table_operator
+    >> test_temp_table_operator
+    >> update_tables_group
+    >> remove_temp_table_operator
+    >> remove_temp_files_operator
+    >> test_group
+)

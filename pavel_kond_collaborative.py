@@ -1,53 +1,79 @@
 # spark-submit --master yarn --deploy-mode cluster --conf spark.sql.catalogImplementation=hive pavel_kond_collaborative.py
 # DEBUG spark-submit --master yarn --deploy-mode client --conf spark.sql.catalogImplementation=hive pavel_kond_collaborative.py
 
-from pyspark import SparkContext, SparkConf
-from pyspark.sql import SparkSession
+import os
+
+from pyspark import SparkConf, SparkContext
 from pyspark.ml.recommendation import ALS
-from pyspark.sql.functions import explode, col
-from pyspark.sql.window import Window
-from pyspark.sql.functions import row_number, lit
+from pyspark.sql import SparkSession
+from pyspark.sql.functions import col, explode, lit, round, row_number
+
+os.environ["PYSPARK_PYTHON"] = os.environ["PYSPARK_DRIVER_PYTHON"]
+# spark.sparkContext.stop()
+# conf = SparkConf().setAppName('pavel_kandratsionak - Collaborative filtering - python')
+# spark = SparkSession.builder.config(conf=conf).getOrCreate()
+
 
 if __name__ == "__main__":
     # create Spark context with Spark configuration
-    conf = SparkConf().setAppName('pavel_kandratsionak - Collaborative filtering - python')
+    conf = SparkConf().setAppName(
+        "pavel_kandratsionak - Collaborative filtering - python"
+    )
     # conf.set(key="spark.kryoserializer.buffer.max", value="2048m")
     conf.set(key="spark.sql.shuffle.partitions", value="100")
     sc = SparkContext(conf=conf)
     spark = SparkSession(sc)
 
-    if not spark.catalog._jcatalog.tableExists('pavel_kandratsionak.user_scores_tmp'):
-        spark.sql('''CREATE EXTERNAL TABLE IF NOT EXISTS pavel_kandratsionak.user_scores_tmp
+    if not spark.catalog._jcatalog.tableExists("pavel_kandratsionak.user_scores_tmp"):
+        spark.sql(
+            """CREATE EXTERNAL TABLE IF NOT EXISTS pavel_kandratsionak.user_scores_tmp
                         (userid string, itemid string, rating string, timestamp_ string)
                             ROW FORMAT DELIMITED FIELDS TERMINATED BY ','
                             STORED AS TEXTFILE
-                            LOCATION '/user/root/ratings';''')
+                            LOCATION '/user/root/ratings';"""
+        )
 
-    if not spark.catalog._jcatalog.tableExists('pavel_kandratsionak.user_scores_collaborative'):
-        spark.sql('''CREATE TABLE IF NOT EXISTS pavel_kandratsionak.user_scores_collaborative (
+    if not spark.catalog._jcatalog.tableExists(
+        "pavel_kandratsionak.user_scores_collaborative"
+    ):
+        spark.sql(
+            """CREATE TABLE IF NOT EXISTS pavel_kandratsionak.user_scores_collaborative (
                         userid string, 
                         itemid string,
                         rating string,
                         timestamp_ string)
                         PARTITIONED BY (year int)
-                        STORED AS PARQUET;''')
+                        STORED AS PARQUET;"""
+        )
 
-        spark.sql('''INSERT INTO TABLE pavel_kandratsionak.user_scores_collaborative
+        spark.sql(
+            """INSERT INTO TABLE pavel_kandratsionak.user_scores_collaborative
                     SELECT u.*, YEAR(from_unixtime(cast(u.timestamp_ as int))) as year
-                    FROM pavel_kandratsionak.user_scores_tmp as u;''')
+                    FROM pavel_kandratsionak.user_scores_tmp as u;"""
+        )
 
-    if not spark.catalog._jcatalog.tableExists('pavel_kandratsionak.user_recommendations'):
+    if not spark.catalog._jcatalog.tableExists(
+        "pavel_kandratsionak.user_recommendations"
+    ):
         data = spark.sql("select * from pavel_kandratsionak.user_scores_collaborative")
 
-        uw = Window.partitionBy(lit(1)).orderBy("userid")
-        uids = data.select("userid").distinct().withColumn("userid_id", row_number().over(uw))
+        uniq_userid = data.select("userid").sort("userid").distinct().sort("userid")
 
-        iw = Window.partitionBy(lit(1)).orderBy("itemid")
-        iids = data.select("itemid").distinct().withColumn("itemid_id", row_number().over(iw))
+        uid_rdd = uniq_userid.rdd.map(lambda x: x["userid"]).zipWithIndex()
+        uid_map = spark.createDataFrame(uid_rdd).toDF("userid", "userid_id")
 
-        df = data.join(uids, on="userid", how="left").join(iids, on="itemid", how="left")
+        uniq_itemid = data.select("itemid").sort("itemid").distinct().sort("itemid")
 
-        df = df.withColumn('rating', col('rating').cast('double')).drop('timestamp')
+        iid_rdd = uniq_itemid.rdd.map(lambda x: x["itemid"]).zipWithIndex()
+        iid_map = spark.createDataFrame(iid_rdd).toDF("itemid", "itemid_id")
+
+        df = data.join(uid_map, on="userid", how="left").join(
+            iid_map, on="itemid", how="left"
+        )
+
+        df = df.withColumn("rating", col("rating").cast("double")).drop(
+            "timestamp_", "year"
+        )
 
         als = ALS(
             maxIter=5,
@@ -58,17 +84,35 @@ if __name__ == "__main__":
             ratingCol="rating",
             nonnegative=True,
             implicitPrefs=False,
-            coldStartStrategy="drop"
+            coldStartStrategy="drop",
         )
 
         model = als.fit(df)
 
         recommendations = model.recommendForAllUsers(30)
-        recommendations = recommendations.withColumn('rec_exp', explode('recommendations')) \
-            .select('userid_id', col('rec_exp.itemid_id'), col('rec_exp.rating'))
+        recommendations = recommendations.withColumn(
+            "rec_exp", explode("recommendations")
+        ).select("userid_id", col("rec_exp.itemid_id"), col("rec_exp.rating"))
 
-        recommendations = recommendations.withColumn("itemid_id", recommendations["itemid_id"].cast("double"))
-        recommendations.join(df.drop("rating"), on=["userid_id", "itemid_id"], how="left").select("userid", "itemid", "rating")\
-            .write.saveAsTable("pavel_kandratsionak.user_recommendations")
+        recommendations = recommendations.withColumn(
+            "itemid_id", recommendations["itemid_id"].cast("double")
+        )
 
-    spark.sql('SELECT * FROM pavel_kandratsionak.user_recommendations').show()
+        recommendations = (
+            recommendations.join(
+                df.drop("rating"), on=["userid_id", "itemid_id"], how="left"
+            )
+            .where(col("userid").isNull())
+            .select("itemid_id", "userid_id", "rating")
+            .join(uid_map, on="userid_id", how="left")
+            .join(iid_map, on="itemid_id", how="left")
+        )
+
+        recommendations = recommendations.withColumn("rating", round("rating")).select(
+            "userid", "itemid", "rating"
+        )
+        recommendations.write.mode("overwrite").saveAsTable(
+            "pavel_kandratsionak.user_recommendations"
+        )
+
+    spark.sql("SELECT * FROM pavel_kandratsionak.user_recommendations").show()
