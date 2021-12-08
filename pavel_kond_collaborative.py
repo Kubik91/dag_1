@@ -55,18 +55,22 @@ if __name__ == "__main__":
     if not spark.catalog._jcatalog.tableExists(
         "pavel_kandratsionak.user_recommendations"
     ):
+        print("--------------Get data--------------")
         data = spark.sql("select * from pavel_kandratsionak.user_scores_collaborative")
 
+        print("--------------Get user ids--------------")
         uniq_userid = data.select("userid").sort("userid").distinct().sort("userid")
 
         uid_rdd = uniq_userid.rdd.map(lambda x: x["userid"]).zipWithIndex()
         uid_map = spark.createDataFrame(uid_rdd).toDF("userid", "userid_id")
 
+        print("--------------Get item ids--------------")
         uniq_itemid = data.select("itemid").sort("itemid").distinct().sort("itemid")
 
         iid_rdd = uniq_itemid.rdd.map(lambda x: x["itemid"]).zipWithIndex()
         iid_map = spark.createDataFrame(iid_rdd).toDF("itemid", "itemid_id")
 
+        print("--------------Get DataFrame--------------")
         df = data.join(uid_map, on="userid", how="left").join(
             iid_map, on="itemid", how="left"
         )
@@ -75,6 +79,7 @@ if __name__ == "__main__":
             "timestamp_", "year"
         )
 
+        print("--------------Create model--------------")
         als = ALS(
             maxIter=5,
             regParam=0.01,
@@ -87,9 +92,13 @@ if __name__ == "__main__":
             coldStartStrategy="drop",
         )
 
+        print("--------------Fit model--------------")
         model = als.fit(df)
 
+        print("--------------Get recommendations--------------")
         recommendations = model.recommendForAllUsers(30)
+
+        print("--------------Clear recommendations--------------")
         recommendations = recommendations.withColumn(
             "rec_exp", explode("recommendations")
         ).select("userid_id", col("rec_exp.itemid_id"), col("rec_exp.rating"))
@@ -111,6 +120,7 @@ if __name__ == "__main__":
         recommendations = recommendations.withColumn("rating", round("rating")).select(
             "userid", "itemid", "rating"
         )
+        print("--------------Save recommendations--------------")
         recommendations.write.mode("overwrite").saveAsTable(
             "pavel_kandratsionak.user_recommendations"
         )
