@@ -2,11 +2,13 @@
 # DEBUG spark-submit --master yarn --deploy-mode client --conf spark.sql.catalogImplementation=hive pavel_kond_collaborative.py
 
 import os
+import subprocess
 
 from pyspark import SparkConf, SparkContext
 from pyspark.ml.recommendation import ALS
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import col, explode, lit, round, row_number
+from pyspark.sql.utils import AnalysisException
 
 os.environ["PYSPARK_PYTHON"] = os.environ["PYSPARK_DRIVER_PYTHON"]
 # spark.sparkContext.stop()
@@ -122,8 +124,18 @@ if __name__ == "__main__":
             "userid", "itemid", "rating"
         )
         print("--------------Save recommendations--------------")
-        recommendations.write.saveAsTable(
-            "pavel_kandratsionak.user_recommendations"
-        )
+        try:
+            recommendations.write.mode("overwrite").saveAsTable(
+                "pavel_kandratsionak.user_recommendations"
+            )
+        except AnalysisException as e:
+            print("===================")
+            subprocess.check_output(
+                "hdfs dfs -rm -r -f /user/hive/warehouse/pavel_kandratsionak.db/user_recommendations",
+                shell=True)
+            recommendations.write.mode("overwrite").saveAsTable(
+                "pavel_kandratsionak.user_recommendations"
+            )
+        # pyspark.sql.utils.AnalysisException
 
     spark.sql("SELECT * FROM pavel_kandratsionak.user_recommendations").show()
