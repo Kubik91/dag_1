@@ -21,7 +21,7 @@ if __name__ == "__main__":
     )
     # conf.set(key="spark.kryoserializer.buffer.max", value="2048m")
     conf.set(key="spark.sql.shuffle.partitions", value="100")
-    conf.set(key="spark.sql.legacy.allowCreatingManagedTableUsingNonemptyLocation", value="true")
+    conf.set(key="spark.sql.legacy.allowCreatingManagedTableUsingNonemptyLocation", value=True)
     sc = SparkContext(conf=conf)
     spark = SparkSession(sc)
 
