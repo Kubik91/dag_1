@@ -21,6 +21,7 @@ if __name__ == "__main__":
     )
     # conf.set(key="spark.kryoserializer.buffer.max", value="2048m")
     conf.set(key="spark.sql.shuffle.partitions", value="100")
+    conf.set(key="spark.sql.legacy.allowCreatingManagedTableUsingNonemptyLocation", value="true")
     sc = SparkContext(conf=conf)
     spark = SparkSession(sc)
 
@@ -121,7 +122,7 @@ if __name__ == "__main__":
             "userid", "itemid", "rating"
         )
         print("--------------Save recommendations--------------")
-        recommendations.write.mode("overwrite").saveAsTable(
+        recommendations.write.saveAsTable(
             "pavel_kandratsionak.user_recommendations"
         )
 
