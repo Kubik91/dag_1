@@ -125,17 +125,19 @@ if __name__ == "__main__":
         )
         print("--------------Save recommendations--------------")
         try:
-            recommendations.write.mode("overwrite").saveAsTable(
-                "pavel_kandratsionak.user_recommendations"
-            )
+            recommendations.write.csv("/tmp/pavel_kandratsionak_recommendations")
+            # recommendations.write.mode("overwrite").saveAsTable(
+            #     "pavel_kandratsionak.user_recommendations"
+            # )
         except AnalysisException as e:
             print("===================")
             subprocess.check_output(
                 "hdfs dfs -rm -r -f /user/hive/warehouse/pavel_kandratsionak.db/user_recommendations",
                 shell=True)
-            recommendations.write.mode("overwrite").saveAsTable(
-                "pavel_kandratsionak.user_recommendations"
-            )
+            recommendations.write.csv("/tmp/pavel_kandratsionak_recommendations")
+            # recommendations.write.mode("overwrite").saveAsTable(
+            #     "pavel_kandratsionak.user_recommendations"
+            # )
         # pyspark.sql.utils.AnalysisException
 
     spark.sql("SELECT * FROM pavel_kandratsionak.user_recommendations").show()
