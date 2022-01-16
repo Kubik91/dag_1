@@ -11,9 +11,9 @@ from pyspark.sql.functions import col, explode, lit, round, row_number
 from pyspark.sql.utils import AnalysisException
 
 os.environ["PYSPARK_PYTHON"] = os.environ["PYSPARK_DRIVER_PYTHON"]
-# spark.sparkContext.stop()
-# conf = SparkConf().setAppName('pavel_kandratsionak - Collaborative filtering - python')
-# spark = SparkSession.builder.config(conf=conf).getOrCreate()
+spark.sparkContext.stop()
+conf = SparkConf().setAppName('pavel_kandratsionak - Collaborative filtering - python')
+spark = SparkSession.builder.config(conf=conf).getOrCreate()
 
 
 if __name__ == "__main__":
@@ -125,7 +125,8 @@ if __name__ == "__main__":
         )
         print("--------------Save recommendations--------------")
         try:
-            recommendations.write.csv("/tmp/pavel_kandratsionak_recommendations")
+            recommendations.repartition(1).write.parquet("/user/hive/warehouse/pavel_kandratsionak.db/user_recommendations")
+            # recommendations.write.csv("/tmp/pavel_kandratsionak_recommendations")
             # recommendations.write.mode("overwrite").saveAsTable(
             #     "pavel_kandratsionak.user_recommendations"
             # )
