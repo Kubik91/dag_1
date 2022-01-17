@@ -125,7 +125,8 @@ if __name__ == "__main__":
         )
         print("--------------Save recommendations--------------")
         try:
-            recommendations.repartition(1).write.parquet("/user/hive/warehouse/pavel_kandratsionak.db/user_recommendations")
+            # recommendations.repartition(1).write.parquet("/user/hive/warehouse/pavel_kandratsionak.db/user_recommendations")
+            recommendations.repartition(1).write.parquet("hdfs://0.0.0.0:9870/user/hive/warehouse/pavel_kandratsionak.db/user_recommendations/user_recommendations.parquet")
             # recommendations.write.csv("/tmp/pavel_kandratsionak_recommendations")
             # recommendations.write.mode("overwrite").saveAsTable(
             #     "pavel_kandratsionak.user_recommendations"
