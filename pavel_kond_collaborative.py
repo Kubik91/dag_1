@@ -8,7 +8,7 @@ from pyspark import SparkConf, SparkContext
 from pyspark.ml.recommendation import ALS
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import col, explode, lit, round, row_number, countDistinct
-from pyspark.sql.utils import AnalysisException
+# from pyspark.sql.utils import AnalysisException
 
 os.environ["PYSPARK_PYTHON"] = os.environ["PYSPARK_DRIVER_PYTHON"]
 # spark.sparkContext.stop()
