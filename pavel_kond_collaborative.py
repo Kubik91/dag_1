@@ -7,13 +7,13 @@ import subprocess
 from pyspark import SparkConf, SparkContext
 from pyspark.ml.recommendation import ALS
 from pyspark.sql import SparkSession
-from pyspark.sql.functions import col, explode, lit, round, row_number
+from pyspark.sql.functions import col, explode, lit, round, row_number, countDistinct
 from pyspark.sql.utils import AnalysisException
 
 os.environ["PYSPARK_PYTHON"] = os.environ["PYSPARK_DRIVER_PYTHON"]
-spark.sparkContext.stop()
-conf = SparkConf().setAppName('pavel_kandratsionak - Collaborative filtering - python')
-spark = SparkSession.builder.config(conf=conf).getOrCreate()
+# spark.sparkContext.stop()
+# conf = SparkConf().setAppName('pavel_kandratsionak - Collaborative filtering - python')
+# spark = SparkSession.builder.config(conf=conf).getOrCreate()
 
 
 if __name__ == "__main__":
@@ -123,23 +123,41 @@ if __name__ == "__main__":
         recommendations = recommendations.withColumn("rating", round("rating")).select(
             "userid", "itemid", "rating"
         )
+
+        print("--------------Get counts--------------")
+
+        cnt = data.select(countDistinct("userid")).collect()[0][0]
+        cnt_per_part = 100000
+
         print("--------------Save recommendations--------------")
-        try:
-            # recommendations.repartition(1).write.parquet("/user/hive/warehouse/pavel_kandratsionak.db/user_recommendations")
-            recommendations.repartition(1).write.parquet("hdfs://0.0.0.0:9870/user/hive/warehouse/pavel_kandratsionak.db/user_recommendations/user_recommendations.parquet")
-            # recommendations.write.csv("/tmp/pavel_kandratsionak_recommendations")
-            # recommendations.write.mode("overwrite").saveAsTable(
-            #     "pavel_kandratsionak.user_recommendations"
-            # )
-        except AnalysisException as e:
-            print("===================")
-            subprocess.check_output(
-                "hdfs dfs -rm -r -f /user/hive/warehouse/pavel_kandratsionak.db/user_recommendations",
-                shell=True)
-            recommendations.write.csv("/tmp/pavel_kandratsionak_recommendations")
-            # recommendations.write.mode("overwrite").saveAsTable(
-            #     "pavel_kandratsionak.user_recommendations"
-            # )
+
+        subprocess.check_output(
+            "hdfs dfs -rm -r -f /user/hive/warehouse/pavel_kandratsionak.db/user_recommendations",
+            shell=True)
+        recommendations.repartition(cnt//cnt_per_part+int(bool(cnt % cnt_per_part))).write.parquet(
+            "/user/hive/warehouse/pavel_kandratsionak.db/user_recommendations",
+            mode="append"
+        )
+        # try:
+        #     recommendations.repartition(1).write.parquet("/user/hive/warehouse/pavel_kandratsionak.db/user_recommendations")
+        #     recommendations.repartition(1).write.parquet("/user/hive/warehouse/pavel_kandratsionak.db/user_recommendations/user_recommendations.parquet")
+        #     recommendations.write.partitionBy("userid").parquet(
+        #         "/user/hive/warehouse/pavel_kandratsionak.db/user_recommendations",
+        #         mode="append"
+        #     )
+        #     recommendations.write.csv("/tmp/pavel_kandratsionak_recommendations")
+        #     recommendations.write.mode("overwrite").saveAsTable(
+        #         "pavel_kandratsionak.user_recommendations"
+        #     )
+        # except AnalysisException as e:
+        #     print("===================")
+        #     subprocess.check_output(
+        #         "hdfs dfs -rm -r -f /user/hive/warehouse/pavel_kandratsionak.db/user_recommendations",
+        #         shell=True)
+        #     recommendations.write.csv("/tmp/pavel_kandratsionak_recommendations")
+        #     recommendations.write.mode("overwrite").saveAsTable(
+        #         "pavel_kandratsionak.user_recommendations"
+        #     )
         # pyspark.sql.utils.AnalysisException
 
     spark.sql("SELECT * FROM pavel_kandratsionak.user_recommendations").show()
